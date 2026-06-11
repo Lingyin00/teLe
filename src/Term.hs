@@ -1,7 +1,45 @@
 {-# OPTIONS_GHC -Wincomplete-patterns #-}
 {-# LANGUAGE GADTs #-}
 module Term where
+{- ============================================================================
+   Term — first-order terms over a signature  T(Σ, X)
+   ============================================================================
 
+   Representation
+     data Term            VarT / FunAppT      -- inductive def of T(Σ, X)
+     newtype Var          variables (X)       -- newtype keeps Σ ∩ X = ∅ at type level
+     newtype FuncSym      function symbols (Σ)
+     data Root            RootVar / RootFun    -- a root is a Var or a FuncSym
+     type Signature       Map FuncSym Int      -- Σ = (F, arity): symbol ↦ arity
+     type Pos             [Int]                -- positions; ε = [], 0-based
+
+   Construction helpers
+     var  :: String -> Term                    -- var "x"     = VarT (Var "x")
+     app  :: String -> [Term] -> Term          -- app "f" [..] = FunAppT (FuncSym "f") [..]
+
+   Predicates / queries
+     wellFormed :: Signature -> Term -> Bool    -- f ∈ Σ and arity(f) = #children, recursively
+     isGround   :: Term -> Bool                 -- contains no variables
+     isSub      :: Term -> Term -> Bool         -- s ⊴ t : s is a subterm of t (reflexive)
+
+   Collecting
+     vars       :: Term -> Set Var              -- variables occurring in t
+     funSymbols :: Term -> Set FuncSym          -- function symbols occurring in t
+     root       :: Term -> Root                 -- top symbol of t
+
+   Measures
+     sizeOfT    :: Term -> Int                  -- number of nodes
+     heightOfT  :: Term -> Int                  -- height/depth; vars and constants = 0
+
+   Positions (rewriting substrate)
+     positions  :: Term -> [Pos]                      -- all positions Pos(t)
+     subtermAt  :: Term -> Pos -> Maybe Term          -- t|_p ; Nothing on illegal p
+     replaceAt  :: Term -> Pos -> Term -> Maybe Term  -- t[s]_p ; Nothing on illegal p
+     replaceNth :: Int -> a -> [a] -> [a]             -- helper: replace one list element
+
+   Conventions
+     - Positions 0-based; ε = []. subtermAt/replaceAt are partial → Maybe.
+   ============================================================================ -}
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Set (Set)
@@ -93,6 +131,7 @@ positions (FunAppT _ ts) = [] : concat (prefixed)
     where 
         prefixed = [map (i:) (positions ti) | (i, ti) <- zip [0..] ts]
 
+-- take a subterm of a term at a particular position
 subtermAt :: Term -> Pos -> Maybe Term
 subtermAt t [] = Just t
 subtermAt (FunAppT _ ts) (x : xs) 
@@ -100,4 +139,18 @@ subtermAt (FunAppT _ ts) (x : xs)
     | otherwise = Nothing
 subtermAt _ _ = Nothing
 
---replaceAt :: Term -> Pos -> Term -> Maybe Term
+-- t[s]_p: replace subterm at position p by s.
+-- Nothing if p is illegal (out-of-range index, or descending into a variable)
+replaceAt :: Term -> Pos -> Term -> Maybe Term
+replaceAt _ [] s = Just s  -- directly repalce the term as s, if it happens at the root
+replaceAt (FunAppT f ts) (x : xs) s 
+    | x >= 0 && x < length ts = 
+        case replaceAt (ts !! x) xs s of
+            Just newChild ->
+                Just (FunAppT f (replaceNth x newChild ts))
+            Nothing -> Nothing
+    | otherwise = Nothing
+replaceAt _ _ _ = Nothing
+
+replaceNth :: Int -> a -> [a] -> [a]
+replaceNth n y xs = [if j == n then y else xj | (j, xj) <- zip [0..] xs]
