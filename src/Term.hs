@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wincomplete-patterns #-}
 {-# LANGUAGE GADTs #-}
 module Term where
 
@@ -54,8 +55,7 @@ var x = VarT (Var x)
 app :: String -> [Term] -> Term
 app f ts = FunAppT (FuncSym f) ts
 
--- the root symbol of a term: 
--- either a variable or a function symbol
+-- the root symbol of a term is either a variable or a function symbol
 data Root =
     RootVar Var
     | RootFun FuncSym
@@ -70,11 +70,34 @@ sizeOfT :: Term -> Int
 sizeOfT (VarT _) = 1
 sizeOfT (FunAppT _ ts) = 1 + sum (map sizeOfT ts)
 
--- height of a term
+-- height (or depth) of a term
+heightOfT :: Term -> Int
+heightOfT (VarT _) = 0
+heightOfT (FunAppT _ ts) = 
+    case length ts of
+        0 -> 0
+        _ -> 1 + maximum (map heightOfT ts)
 
--- whether a term t is a subterm of s
+-- whether a term s is a subterm of t
+isSub :: Term -> Term -> Bool
+isSub s t = s == t 
+    || case t of
+        FunAppT _ ts -> any (isSub s) ts
+        VarT _ -> False
 
--- position
+-- positions of a term, where root is defined as ε， and the first position begins with 0
+type Pos = [Int]
+positions :: Term -> [Pos]
+positions (VarT _) = [[]]
+positions (FunAppT _ ts) = [] : concat (prefixed)
+    where 
+        prefixed = [map (i:) (positions ti) | (i, ti) <- zip [0..] ts]
 
--- substitution
+subtermAt :: Term -> Pos -> Maybe Term
+subtermAt t [] = Just t
+subtermAt (FunAppT _ ts) (x : xs) 
+    | x >= 0 && x < length ts = subtermAt (ts !! x) xs
+    | otherwise = Nothing
+subtermAt _ _ = Nothing
 
+--replaceAt :: Term -> Pos -> Term -> Maybe Term
