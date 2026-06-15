@@ -6,6 +6,8 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 -- giving two terms s,t, try to compute a subsitution σ such that sσ = t
+
+-- version without tail recursion
 matching :: Term -> Term -> Maybe Subst
 matching s t = go s t Map.empty
     where
@@ -27,6 +29,23 @@ matching s t = go s t Map.empty
         goList [] sigma = Just sigma
         -- The constraints on a variable are global across subterms, so they must all be accumulated into one shared substitution
         goList ((s,t) : rest) sigma = go s t sigma >>= goList rest
+
+-- using tail recursion
+match :: Term -> Term -> Maybe Subst
+match s t = go [(s,t)] Map.empty
+    where
+        go :: [(Term,Term)] -> Subst -> Maybe Subst 
+        go [] sigma = Just sigma
+        go ((VarT x, t') : rest) sigma =
+            case Map.lookup x sigma of
+                Nothing -> go rest (Map.insert x t' sigma)
+                Just a | a == t' -> go rest sigma
+                       | otherwise -> Nothing
+        go (((FunAppT _ _), (VarT _)) : _ ) _ = Nothing
+        go (((FunAppT f tf), (FunAppT g tg)) : rest) sigma
+            | f == g && length tf == length tg = 
+                go (zip tf tg ++ rest) sigma
+            | otherwise = Nothing
 
 -- test
 x = var "x"
