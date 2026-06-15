@@ -8,6 +8,21 @@
 I separate the completion algorithm from proof reconstruction. The algorithm is an untrusted oracle; the Lean kernel is the root of trust and checks the justification it produces. So the algorithm does not need to be written in Lean.
 I wrote it in Haskell because working in a non-dependent typed language helps me to figure out how the algorithm itself, and also because I can reference the early versions of [Twee](https://github.com/nick8325/twee)
 
+## Project Structure
+TODO: Critical pair, Term ordering, Completion loop
+
+↑
+
+Matching, Unification
+
+↑
+
+Substitution
+
+↑
+
+Term
+
 ## References :
 
 - [Term Rewriting Systems](https://joerg.endrullis.de/trs/)

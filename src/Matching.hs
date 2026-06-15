@@ -41,8 +41,8 @@ match s t = go [(s,t)] Map.empty
                 Nothing -> go rest (Map.insert x t' sigma)
                 Just a | a == t' -> go rest sigma
                        | otherwise -> Nothing
-        go (((FunAppT _ _), (VarT _)) : _ ) _ = Nothing
-        go (((FunAppT f tf), (FunAppT g tg)) : rest) sigma
+        go ((FunAppT _ _, VarT _) : _ ) _ = Nothing
+        go ((FunAppT f tf, FunAppT g tg) : rest) sigma
             | f == g && length tf == length tg = 
                 go (zip tf tg ++ rest) sigma
             | otherwise = Nothing

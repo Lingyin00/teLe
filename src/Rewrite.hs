@@ -5,7 +5,7 @@ import Substitution
 import qualified Data.Set as Set
 
 -- a rewrite rule l → r (structure)
-data Rule = Rule {lhs : Term, rhs : Term}
+data Rule = Rule {lhs :: Term, rhs :: Term}
     deriving (Eq, Ord, Show)
 
 -- validity: ℓ ∉ X, and Var(rhs) ⊆ Var(lhs)
