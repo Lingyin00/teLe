@@ -127,7 +127,7 @@ isSub s t = s == t
 type Pos = [Int]
 positions :: Term -> [Pos]
 positions (VarT _) = [[]]
-positions (FunAppT _ ts) = [] : concat (prefixed)
+positions (FunAppT _ ts) = [] : concat prefixed
     where 
         prefixed = [map (i:) (positions ti) | (i, ti) <- zip [0..] ts]
 
