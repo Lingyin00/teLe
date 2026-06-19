@@ -6,7 +6,8 @@ import Term
 import Substitution
 
 -- Lexicographic Path Ordering
--- Method : program transformation, implementation according to paper `THINGS TO KNOW WHEN IMPLEMENTING LPO`
+-- Optimization method : program transformation, implementation according to paper `THINGS TO KNOW WHEN IMPLEMENTING LPO`
+-- TODO: implement the polynomial version from that paper.
 
 -- precedence on function symbols
 type Prec = FuncSym -> FuncSym -> Bool
