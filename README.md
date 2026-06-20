@@ -9,19 +9,17 @@ I separate the completion algorithm from proof reconstruction. The algorithm is 
 I wrote it in Haskell because working in a non-dependent typed language helps me to figure out how the algorithm itself, and also because I can reference the early versions of [Twee](https://github.com/nick8325/twee)
 
 ## Project Structure
-TODO: Critical pair, Term ordering, Completion loop
 
-↑
 
-Matching, Unification
+| Layer | Module            | Depends on        |  TODO        |
+|-------|-------------------|-------------------|--------------|
+| 5| `CriticalPair.hs` | Unification, LPO       | unfailing    |
+| 4     | `Unification.hs`  | Matching          | possible optimization: MM|
+| 3     | `Matching.hs`     | Substitution      |
+| 2     | `Substitution.hs` | Term              |
+| 1     | `LPO.hs`          | Term              | optimization
+| 0     | `Term.hs`         | — (foundation)    |
 
-↑
-
-Substitution
-
-↑
-
-Term
 
 ## References :
 
