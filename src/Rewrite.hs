@@ -1,7 +1,11 @@
 module Rewrite where
 
-import Term 
+import Term
 import Substitution
+import Matching(match)
+import Unification(unify)
+import Control.Monad.State
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 -- a rewrite rule l → r (structure)
@@ -19,4 +23,46 @@ validRule (Rule l r) = notVar l && (vars r `Set.isSubsetOf` vars l)
 data TRS = TRS {signature :: Signature, rules :: [Rule]}
     deriving (Show)
 
--- TODO: rewrite steps, rewrite to normal form, etc...
+-- nonvariable positions : entrance to critical pair
+nonVarPos :: Term -> [Pos]
+nonVarPos t = [p | p <- positions t,
+                    case subtermAt t p of
+                        Just (VarT _) -> False
+                        _ -> True]
+
+-- fresh variable and renaming 
+type Fresh = State Int
+
+freshVar :: Fresh Term
+freshVar = do -- get the current counter, add one,
+    n <- get 
+    put (n + 1) 
+    pure (VarT (Var ("_v" ++ show n)))
+
+-- renaming rule
+renameRule :: Rule -> Fresh Rule
+renameRule (Rule l r) = do
+    let vs = Set.toList (vars l `Set.union` vars r)
+    newVars <- mapM (const freshVar) vs 
+    let sub = Map.fromList (zip vs newVars)
+    pure (Rule (appSubst sub l) (appSubst sub r))
+
+-- rewrite one step at a position, using one rule
+rewriteAt :: Rule -> Pos -> Term -> Maybe Term
+rewriteAt (Rule l r) p t = do
+    s <- subtermAt t p
+    m <- match l s
+    replaceAt t p (appSubst m r)
+
+-- any rewrite step
+rewriteStep :: [Rule] -> Term -> Maybe Term
+rewriteStep rs t = 
+    case [t' | rule <- rs, p <- positions t, Just t' <- [rewriteAt rule p t]] of
+    (t': _) -> Just t'
+    []     -> Nothing
+
+-- normalize to normal form
+normalize :: [Rule] -> Term -> Term
+normalize rs t = case rewriteStep rs t of
+    Just t' -> normalize rs t'
+    Nothing -> t
