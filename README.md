@@ -13,7 +13,8 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 
 | Layer | Module            | Depends on        |  TODO        |
 |-------|-------------------|-------------------|--------------|
-| 5| `CriticalPair.hs` | Unification, LPO       | unfailing    |
+| 6| `CriticalPair.hs` | Rewrite       | implementation    |
+| 5    | `Rewrite.hs`          | 0 - 5              | 
 | 4     | `Unification.hs`  | Matching          | possible optimization: MM|
 | 3     | `Matching.hs`     | Substitution      |
 | 2     | `Substitution.hs` | Term              |
