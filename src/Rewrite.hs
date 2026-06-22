@@ -39,6 +39,10 @@ freshVar = do -- get the current counter, add one,
     put (n + 1) 
     pure (VarT (Var ("_v" ++ show n)))
 
+-- get the computational result from state monad
+runFresh :: Fresh a -> a
+runFresh m = evalState m 0
+
 -- renaming rule
 renameRule :: Rule -> Fresh Rule
 renameRule (Rule l r) = do
@@ -66,3 +70,10 @@ normalize :: [Rule] -> Term -> Term
 normalize rs t = case rewriteStep rs t of
     Just t' -> normalize rs t'
     Nothing -> t
+
+-- TODO：bidirectional rewriting of an equation
+
+data Equation = Equation {eql :: Term, eqr :: Term}
+    deriving (Eq, Ord, Show)
+
+-- TODO : orient an equation by using term ordering

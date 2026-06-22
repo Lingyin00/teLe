@@ -63,6 +63,7 @@ library
         Matching
         LPO
         CriticalPair
+        Pretty
         
 
     -- Modules included in this library but not exported.
