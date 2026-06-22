@@ -42,4 +42,14 @@ assoc = Rule (app "f" [app "f" [var "x", var "y"], var "z"])
 -- result: f(_v0,f(_v1,_v2))  =?=  f(_v0,f(_v1,_v2)) -- this pair will disappear after filter
 ---------- f(f(_v3,f(_v4,_v1)),_v2)  =?=  f(f(_v3,_v4),f(_v1,_v2))
 
+-- leftId: f(e, x) → x        
+leftId :: Rule
+leftId = Rule (app "f" [app "e" [], var "x"]) (var "x")
+-- printCPs (runFresh (criticalPairs assoc leftId))
+-- result : f(_v1,_v2)  =?=  f(e,f(_v1,_v2))
+-- printCPs (runFresh (criticalPairs leftId assoc)) -- result : empty list
+ruleF = Rule (app "f" [var "x"]) (var "x")
+ruleG = Rule (app "g" [var "y"]) (var "y")
+-- printCPs (runFresh (criticalPairs ruleF ruleG)) -- empty list
+
 
