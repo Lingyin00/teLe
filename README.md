@@ -13,8 +13,9 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 
 | Layer | Module            | Depends on        |  TODO        |
 |-------|-------------------|-------------------|--------------|
-| 6| `CriticalPair.hs` | Rewrite       | implementation    |
-| 5    | `Rewrite.hs`          | 0 - 5              | 
+|7| `Completion.hs` | 0 - 6| interface with CP, implementation, unfailing
+| 6| `CriticalPair.hs` | 0 - 5       | implementation    |
+| 5    | `Rewrite.hs`          | 0 - 4              | possibly modification  according to completion loop
 | 4     | `Unification.hs`  | Matching          | possible optimization: MM|
 | 3     | `Matching.hs`     | Substitution      |
 | 2     | `Substitution.hs` | Term              |
@@ -27,3 +28,5 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 - [Term Rewriting Systems](https://joerg.endrullis.de/trs/)
 - [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707)
 - [Twee: An Equational Theorem Prover (System Description) ](https://smallbone.se/papers/twee.pdf)
+- [THINGS TO KNOW WHEN IMPLEMENTING LPO](https://www.worldscientific.com/doi/abs/10.1142/S0218213006002564)
+
