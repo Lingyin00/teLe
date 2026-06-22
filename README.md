@@ -1,7 +1,8 @@
 # Goal
 
 1. Implementing the unfailing Knuth-Bendix completion in Haskell 
-
+- 1.1: implement the classical KBC, test with group axioms
+- 1.2: implement the unfailing version, test with abel group axioms
 
 2. Doing proof reconstruction in Lean
 
@@ -13,9 +14,9 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 
 | Layer | Module            | Depends on        |  TODO        |
 |-------|-------------------|-------------------|--------------|
-|7| `Completion.hs` | 0 - 6| interface with CP, implementation, unfailing
-| 6| `CriticalPair.hs` | 0 - 5       | implementation    |
-| 5    | `Rewrite.hs`          | 0 - 4              | possibly modification  according to completion loop
+|7| `Completion.hs` | 0 - 6| interface with CP, classical implementation, extend to unfailing
+| 6| `CriticalPair.hs` | 0 - 5       | unfailing version |
+| 5    | `Rewrite.hs`          | 0 - 4              | bidirectional orient
 | 4     | `Unification.hs`  | Matching          | possible optimization: MM|
 | 3     | `Matching.hs`     | Substitution      |
 | 2     | `Substitution.hs` | Term              |

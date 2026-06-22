@@ -3,7 +3,7 @@ module Rewrite where
 import Term
 import Substitution
 import Matching(match)
-import Unification(unify)
+import LPO
 import Control.Monad.State
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -71,9 +71,21 @@ normalize rs t = case rewriteStep rs t of
     Just t' -> normalize rs t'
     Nothing -> t
 
--- TODO：bidirectional rewriting of an equation
+-- TODO(Unfailing)：bidirectional rewriting of an equation
 
 data Equation = Equation {eql :: Term, eqr :: Term}
     deriving (Eq, Ord, Show)
 
 -- TODO : orient an equation by using term ordering
+orient :: Prec -> Equation -> Maybe Rule
+orient gt (Equation left right) 
+    | lpoNaive gt left right = Just (Rule left right)
+    | lpoNaive gt right left = Just (Rule right left)
+    | otherwise = Nothing -- this is the difference between classical kbc and unfailing kbc
+
+-- test
+precSelf = precFromList["f", "g"]
+test1 = orient precSelf (Equation (app "f" [app "a" []]) (app "a" []))
+test2 = orient precSelf (Equation (var "x") (var "y"))
+
+test3 = orient precSelf (Equation (app "g" [app "a" []]) (app "f" [app "a" []]))

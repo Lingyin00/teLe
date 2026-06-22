@@ -1,6 +1,5 @@
 module CriticalPair where
 
-import LPO
 import Unification
 import Rewrite
 import Term 
@@ -33,14 +32,14 @@ criticalPairs r1 r2 = do
                Just sub <- [unify u subterm],
                let right = appSubst sub t,
                Just left <- [replaceAt (appSubst sub s) pos (appSubst sub v)]]
-    pure cps
+    pure (filter (\cp -> cpl cp /= cpr cp) cps) -- filter the trival critical pairs
 
 --test
 assoc :: Rule
 assoc = Rule (app "f" [app "f" [var "x", var "y"], var "z"])
              (app "f" [var "x", app "f" [var "y", var "z"]])
 -- printCPs (runFresh (criticalPairs assoc assoc)) 
--- result: f(_v0,f(_v1,_v2))  =?=  f(_v0,f(_v1,_v2))
+-- result: f(_v0,f(_v1,_v2))  =?=  f(_v0,f(_v1,_v2)) -- this pair will disappear after filter
 ---------- f(f(_v3,f(_v4,_v1)),_v2)  =?=  f(f(_v3,_v4),f(_v1,_v2))
 
 

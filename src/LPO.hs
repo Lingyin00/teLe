@@ -3,7 +3,7 @@ module LPO where
 import qualified Data.Set as Set
 import Data.List (elemIndex)
 import Term
-import Substitution
+
 
 -- Lexicographic Path Ordering
 -- Optimization method : program transformation, implementation according to paper `THINGS TO KNOW WHEN IMPLEMENTING LPO`
@@ -43,7 +43,7 @@ precFromList :: [String] -> Prec
 precFromList list (FuncSym x) (FuncSym y) =
     case (elemIndex x list, elemIndex y list) of
         (Just i, Just j) -> i < j 
-        otherwise -> False
+        _ -> False
 
 -- self-defined precedence
 precFGA :: Prec
