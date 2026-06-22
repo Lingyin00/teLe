@@ -64,6 +64,7 @@ library
         LPO
         CriticalPair
         Pretty
+        Completion
         
 
     -- Modules included in this library but not exported.

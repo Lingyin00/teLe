@@ -39,6 +39,8 @@ criticalPairs r1 r2 = do
 assoc :: Rule
 assoc = Rule (app "f" [app "f" [var "x", var "y"], var "z"])
              (app "f" [var "x", app "f" [var "y", var "z"]])
--- runFresh (criticalPairs assoc assoc)
+-- printCPs (runFresh (criticalPairs assoc assoc)) 
+-- result: f(_v0,f(_v1,_v2))  =?=  f(_v0,f(_v1,_v2))
+---------- f(f(_v3,f(_v4,_v1)),_v2)  =?=  f(f(_v3,_v4),f(_v1,_v2))
 
 
