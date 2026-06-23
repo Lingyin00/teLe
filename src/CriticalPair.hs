@@ -34,6 +34,12 @@ criticalPairs r1 r2 = do
                Just left <- [replaceAt (appSubst sub s) pos (appSubst sub v)]]
     pure (filter (\cp -> cpl cp /= cpr cp) cps) -- filter the trival critical pairs
 
+-- getting the CriticalPair from monad is : runFresh (criticalPairs r1 r2) :: [CriticalPair]
+
+-- check whether a critical pair is joinable or not
+joinCP :: [Rule] -> CriticalPair -> Bool
+joinCP rs cp = joinable rs (cpl cp) (cpr cp)
+
 --test
 assoc :: Rule
 assoc = Rule (app "f" [app "f" [var "x", var "y"], var "z"])

@@ -14,7 +14,8 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 
 | Layer | Module            | Depends on        |  TODO        |
 |-------|-------------------|-------------------|--------------|
-|7| `Completion.hs` | 0 - 6| interface with CP, classical implementation, extend to unfailing
+|8| `Completion.hs` | 0 - 6| unfailing completion
+|7| `Huet.hs` | 0 - 6| interface with CP, classical KBC implementation
 | 6| `CriticalPair.hs` | 0 - 5       | unfailing version |
 | 5    | `Rewrite.hs`          | 0 - 4              | bidirectional orient
 | 4     | `Unification.hs`  | Matching          | possible optimization: MM|
@@ -26,8 +27,8 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 
 ## References :
 
-- [Term Rewriting Systems](https://joerg.endrullis.de/trs/)
-- [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707)
+- [Term Rewriting Systems](https://joerg.endrullis.de/trs/) : general theoretical background
+- [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707) : Chapter 7.2, for the implementation of Huet's completion loop
 - [Twee: An Equational Theorem Prover (System Description) ](https://smallbone.se/papers/twee.pdf)
-- [THINGS TO KNOW WHEN IMPLEMENTING LPO](https://www.worldscientific.com/doi/abs/10.1142/S0218213006002564)
+- [THINGS TO KNOW WHEN IMPLEMENTING LPO](https://www.worldscientific.com/doi/abs/10.1142/S0218213006002564) : implementation of naive LPO
 

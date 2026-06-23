@@ -3,7 +3,6 @@ module Rewrite where
 import Term
 import Substitution
 import Matching(match)
-import LPO
 import Control.Monad.State
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -34,9 +33,9 @@ nonVarPos t = [p | p <- positions t,
 type Fresh = State Int
 
 freshVar :: Fresh Term
-freshVar = do -- get the current counter, add one,
+freshVar = do -- get the current counter, add one
     n <- get 
-    put (n + 1) 
+    put (n + 1) -- counter for variables
     pure (VarT (Var ("_v" ++ show n)))
 
 -- get the computational result from state monad
@@ -71,21 +70,11 @@ normalize rs t = case rewriteStep rs t of
     Just t' -> normalize rs t'
     Nothing -> t
 
+-- whether two terms joinable or not
+joinable :: [Rule] -> Term -> Term -> Bool
+joinable rs s t = normalize rs s == normalize rs t
+
 -- TODO(Unfailing)：bidirectional rewriting of an equation
 
 data Equation = Equation {eql :: Term, eqr :: Term}
     deriving (Eq, Ord, Show)
-
--- TODO : orient an equation by using term ordering
-orient :: Prec -> Equation -> Maybe Rule
-orient gt (Equation left right) 
-    | lpoNaive gt left right = Just (Rule left right)
-    | lpoNaive gt right left = Just (Rule right left)
-    | otherwise = Nothing -- this is the difference between classical kbc and unfailing kbc
-
--- test
-precSelf = precFromList["f", "g"]
-test1 = orient precSelf (Equation (app "f" [app "a" []]) (app "a" []))
-test2 = orient precSelf (Equation (var "x") (var "y"))
-
-test3 = orient precSelf (Equation (app "g" [app "a" []]) (app "f" [app "a" []]))
