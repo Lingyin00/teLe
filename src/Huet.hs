@@ -28,6 +28,11 @@ mkEqFromCp cp = Equation (cpl cp) (cpr cp)
 mkEqsFromCps :: [CriticalPair] -> [Equation]
 mkEqsFromCps = map mkEqFromCp
 
+-- fairness : rules with marker
+data MRule = MRule{
+    mrule :: Rule,
+    marked :: Bool}
+
 -- Begins here: the Huet's completion loop
 allMarked :: [MRule] -> Bool
 allMarked = all marked
@@ -39,14 +44,16 @@ findUnmarked rls =
         (before, x : after) -> Just (x, before ++ after)
         (_, []) -> Nothing -- going through all elements in the list and we didn't find this kind of unmarked rule
 
+markRule :: MRule -> MRule
+markRule a = a {marked = True}
+
 -- TODO : deduce
--- TODO : mark
+deduce :: MRule -> [MRule] -> [Equation]
+deduce r mrs = undefined
+
+
 -- TODO : processEquation (step b, c, d, e)
 
--- fairness : rules with marker
-data MRule = MRule{
-    mrule :: Rule,
-    marked :: Bool}
 
 -- psudocode in Haskell style of Huet's completion with outer loop and inner loop
 -- outer e r
@@ -74,10 +81,17 @@ huet p es = outer es [] where -- es = E_0, [] = R_0
       | otherwise = -- enter into the inner loop
         case inner eqs rls of
             Nothing -> Nothing -- completion fails
-            Just r' -> case findUnmarked r' of
+            Just r' -> case findUnmarked r' of -- E is empty right now
                             Nothing -> Just r' 
-                            Just (umRule, r'') -> undefined -- step f
-            
-
+                            -- using umRule to compute its critical pair with itself or other marked rule
+                            -- deduce this critical pair to equation, add this equation to E
+                            -- mark umRule
+                            -- enter into inner loop again
+                            Just (umRule, r'') -> -- step f
+                                let newEq = deduce umRule r''
+                                    newRl = markRule umRule : r''
+                                in outer newEq newRl
     inner :: [Equation] -> [MRule] -> Maybe [MRule] 
     inner = undefined -- step from a to e
+
+-- TODO: refactor this explicite huet using State Monad
