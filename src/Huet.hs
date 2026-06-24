@@ -7,6 +7,8 @@ import Term
 import Rewrite
 import LPO
 import CriticalPair
+
+
 -- TODO : orient an equation by using term ordering
 orient :: Prec -> Equation -> Maybe Rule
 orient gt (Equation left right) 
@@ -27,14 +29,21 @@ mkEqsFromCps :: [CriticalPair] -> [Equation]
 mkEqsFromCps = map mkEqFromCp
 
 -- Begins here: the Huet's completion loop
+allMarked :: [MRule] -> Bool
+allMarked = all marked
+
+-- find if there's an unmarked rule in rule list
+findUnmarked :: [MRule] -> Maybe (MRule, [MRule])
+findUnmarked rls =
+    case span marked rls of -- break (not . marked) == span marked (cut the list at the first unmarked position)
+        (before, x : after) -> Just (x, before ++ after)
+        (_, []) -> Nothing -- going through all elements in the list and we didn't find this kind of unmarked rule
 
 -- TODO : deduce
--- TODO : findMarked
 -- TODO : mark
--- TODO : allMarked
 -- TODO : processEquation (step b, c, d, e)
 
--- fairness : rules are with marker
+-- fairness : rules with marker
 data MRule = MRule{
     mrule :: Rule,
     marked :: Bool}
@@ -56,5 +65,19 @@ data MRule = MRule{
             -- Delete r' -> inner rest r'
             -- Orient newE r'  -> inner (newE ++ rest) r'          
 
-huet :: Prec -> [Equation] -> Maybe [Rule]
---huet p es = 
+huet :: Prec -> [Equation] -> Maybe [MRule]
+huet p es = outer es [] where -- es = E_0, [] = R_0
+    -- TODO: Is preprocessing needed here??
+    outer :: [Equation] -> [MRule] -> Maybe [MRule]
+    outer eqs rls 
+      | null eqs && allMarked rls = Just rls
+      | otherwise = -- enter into the inner loop
+        case inner eqs rls of
+            Nothing -> Nothing -- completion fails
+            Just r' -> case findUnmarked r' of
+                            Nothing -> Just r' 
+                            Just (umRule, r'') -> undefined -- step f
+            
+
+    inner :: [Equation] -> [MRule] -> Maybe [MRule] 
+    inner = undefined -- step from a to e

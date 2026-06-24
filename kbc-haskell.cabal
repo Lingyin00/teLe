@@ -64,6 +64,7 @@ library
         LPO
         CriticalPair
         Pretty
+        Huet
         Completion
         
 
