@@ -1,4 +1,4 @@
-module Completion where
+module UnfailingKBC where
 
 import Unification
 import LPO 

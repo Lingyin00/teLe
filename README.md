@@ -14,10 +14,10 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 
 | Layer | Module            | Depends on        |  TODO        |
 |-------|-------------------|-------------------|--------------|
-|8| `Completion.hs` | 0 - 6| unfailing completion
-|7| `Huet.hs` | 0 - 6| interface with CP, classical KBC implementation
+|8| `UnfailingKBC.hs`(unfailing version) | 0 - 6| implementation(possibly just directly in Lean)
+|7| `Huet.hs`(classical completion) | 0 - 6| 
 | 6| `CriticalPair.hs` | 0 - 5       | unfailing version |
-| 5    | `Rewrite.hs`          | 0 - 4              | bidirectional orient
+| 5    | `Rewrite.hs`          | 0 - 4              | 
 | 4     | `Unification.hs`  | Matching          | possible optimization: MM|
 | 3     | `Matching.hs`     | Substitution      |
 | 2     | `Substitution.hs` | Term              |

@@ -65,7 +65,7 @@ library
         CriticalPair
         Pretty
         Huet
-        Completion
+        UnfailingKBC
         
 
     -- Modules included in this library but not exported.

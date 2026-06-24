@@ -1,6 +1,6 @@
 module Huet where
 
--- Implementation of the `Huet´s completion procedure` according to `TRaAT`
+-- Implementation of the `Huet´s completion procedure` according to `TRaAT` written by Nipkow & Baader
 -- Input: Set E of identities, Terminating set R of rewrite rules
 -- rules may be marked or not(for computing critical pairs)
 import Term
@@ -8,8 +8,7 @@ import Rewrite
 import LPO
 import CriticalPair
 
-
--- TODO : orient an equation by using term ordering
+-- orient an equation by using term ordering
 orient :: Prec -> Equation -> Maybe Rule
 orient gt (Equation left right) 
     | lpoNaive gt left right = Just (Rule left right)
@@ -47,51 +46,70 @@ findUnmarked rls =
 markRule :: MRule -> MRule
 markRule a = a {marked = True}
 
--- TODO : deduce
-deduce :: MRule -> [MRule] -> [Equation]
-deduce r mrs = undefined
+-- Rule deduce
+deduce :: MRule -> [MRule] -> Fresh [Equation]
+deduce r mrs = do
+    let self = mrule r
+        markedRule = map mrule (filter marked mrs)
+    selfCP <- criticalPairs self self
+    otherCPs <- mapM (biDirectionCP self) markedRule
+    pure (map mkEqFromCp (selfCP ++ concat otherCPs))
+    where
+        biDirectionCP a b = do
+            c1 <- criticalPairs a b
+            c2 <- criticalPairs b a
+            pure (c1 ++ c2)
+
+-- helper: whether newRule could rewrite a rule at some position
+reduceByRule :: Rule -> Term -> Maybe Term
+reduceByRule newRule rule =
+    case [g' | pos <- positions rule, Just g' <- [rewriteAt newRule pos rule]] of
+        [] -> Nothing
+        (g' : _) -> Just g'
+
+-- helper: divide the rls into rules which can be reduced by newRule and which can not
 
 
--- TODO : processEquation (step b, c, d, e)
-
-
--- psudocode in Haskell style of Huet's completion with outer loop and inner loop
--- outer e r
---  | null e && allMarked r = Just r
---  | otherwise =
---      case inner e r of
---          Nothing -> Nothing -- completion fails
---          Just r' -> case findMarked r' of
-                        -- Nothing -> Just r'
-                        -- Just (r1， r'') -> outer (deduce r1 r'') (mark r1 r'')
--- inner e r
---   | null e = Just r
---   | otherwise =
---          let (x : rest) = e in case processEquation x r of
-            -- Fail -> Nothing
-            -- Delete r' -> inner rest r'
-            -- Orient newE r'  -> inner (newE ++ rest) r'          
 
 huet :: Prec -> [Equation] -> Maybe [MRule]
-huet p es = outer es [] where -- es = E_0, [] = R_0
+huet p es = runFresh(outer es [])
+  where -- es = E_0, [] = R_0
     -- TODO: Is preprocessing needed here??
-    outer :: [Equation] -> [MRule] -> Maybe [MRule]
+    outer :: [Equation] -> [MRule] -> Fresh(Maybe [MRule])
     outer eqs rls 
-      | null eqs && allMarked rls = Just rls
-      | otherwise = -- enter into the inner loop
-        case inner eqs rls of
-            Nothing -> Nothing -- completion fails
+      | null eqs && allMarked rls = pure(Just rls)
+      | otherwise = do-- enter into the inner loop
+        res <- inner eqs rls
+        case res of
+            Nothing -> pure Nothing -- completion fails
             Just r' -> case findUnmarked r' of -- E is empty right now
-                            Nothing -> Just r' 
+                            Nothing -> pure (Just r') 
                             -- using umRule to compute its critical pair with itself or other marked rule
                             -- deduce this critical pair to equation, add this equation to E
                             -- mark umRule
                             -- enter into inner loop again
-                            Just (umRule, r'') -> -- step f
-                                let newEq = deduce umRule r''
-                                    newRl = markRule umRule : r''
-                                in outer newEq newRl
-    inner :: [Equation] -> [MRule] -> Maybe [MRule] 
-    inner = undefined -- step from a to e
+                            Just (umRule, r'') -> do -- rule f)
+                                newEqs <- deduce umRule r''
+                                let newRls = markRule umRule : r''
+                                outer newEqs newRls
+    inner :: [Equation] -> [MRule] -> Fresh(Maybe [MRule]) -- step from a to e
+    inner [] rls = pure (Just rls)
+    inner (eq : eqs) rls = do
+        -- take one equation, which is eq here, normalize its lhs and its rhs
+        let rls' = map mrule rls -- rule a) b)
+            normal_lhs = normalize rls' (eql eq)
+            normal_rhs = normalize rls' (eqr eq)
+        if normal_lhs == normal_rhs then inner eqs rls
+           else case orient p (Equation normal_lhs normal_rhs) of
+                    Nothing -> pure Nothing -- rule d)
+                    Just newRule -> undefined
+                    -- filter out rules in R which cannot been reduced by newRule
+                    -- keep the lhs of those rules and normalize rhs by R ∪ {newRule}, inherit marker
+                    -- newRule is unmarked
+                    -- add newRule to this new rule set
+                    -- remove eq from the original equation set
+                    -- add new equations to the equation set: new equations are from those reduced rules(keep the reduced lhs and keep rhs unchanged)
 
--- TODO: refactor this explicite huet using State Monad
+
+
+    
