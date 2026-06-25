@@ -1,13 +1,23 @@
-# Goal
+# Goal : core deliverable for praktika
 
-1. Implementing the unfailing Knuth-Bendix completion in Haskell 
-- 1.1: implement the classical KBC, test with group axioms
-- 1.2: implement the unfailing version, test with abel group axioms
+1. Implementation:
+  - Huet/KB completion implementation 
+  - LPO 
+  - selection strategies(smallest rule first)
 
-2. Doing proof reconstruction in Lean
+2. Evaluation:
+  - Original KB paper examples.
+  - Hand-written algebraic examples: nat, monoid, zero monoid, group, wiki monoid.
+  - Small TPTP equational benchmark set.
 
-I separate the completion algorithm from proof reconstruction. The algorithm is an untrusted oracle; the Lean kernel is the root of trust and checks the justification it produces. So the algorithm does not need to be written in Lean.
-I wrote it in Haskell because working in a non-dependent typed language helps me to figure out how the algorithm itself, and also because I can reference the early versions of [Twee](https://github.com/nick8325/twee)
+3. Extensions if time permits:
+  - KBO for problems where LPO fails to orient.
+  - Profiling and optimization.
+
+
+# Future work: proof reconstruction in Lean
+Implementation of unfailing loop using metaprogramming API instead of self-defined inductive types
+
 
 ## Project Structure
 
@@ -26,6 +36,8 @@ I wrote it in Haskell because working in a non-dependent typed language helps me
 
 
 ## References :
+
+- [Simple Word Problems in Universal Algebra](https://www.cs.tufts.edu/~nr/cs257/archive/don-knuth/knuth-bendix.pdf): the original paper from Knuth&Bendix
 
 - [Term Rewriting Systems](https://joerg.endrullis.de/trs/) : general theoretical background
 - [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707) : Chapter 7.2, for the implementation of Huet's completion loop

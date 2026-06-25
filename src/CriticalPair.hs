@@ -54,8 +54,9 @@ leftId = Rule (app "f" [app "e" [], var "x"]) (var "x")
 -- printCPs (runFresh (criticalPairs assoc leftId))
 -- result : f(_v1,_v2)  =?=  f(e,f(_v1,_v2))
 -- printCPs (runFresh (criticalPairs leftId assoc)) -- result : empty list
+ruleF :: Rule
 ruleF = Rule (app "f" [var "x"]) (var "x")
+ruleG :: Rule
 ruleG = Rule (app "g" [var "y"]) (var "y")
 -- printCPs (runFresh (criticalPairs ruleF ruleG)) -- empty list
-
-
+-- putStrLn (pretty runGroup)
