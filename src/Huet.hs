@@ -10,6 +10,8 @@ import CriticalPair
 import Pretty
 import Debug.Trace (trace)
 import Data.List (sortOn)
+import Data.List (minimumBy)
+import Data.Ord (comparing)
 
 prettyMRule :: MRule -> String
 prettyMRule (MRule r m) =
@@ -48,6 +50,12 @@ eqSize (Equation l r) = termSize l + termSize r
 sortEqs :: [Equation] -> [Equation]
 sortEqs = sortOn eqSize
 
+ruleSize :: Rule -> Int
+ruleSize (Rule l r) = termSize l + termSize r
+
+mRuleSize :: MRule -> Int
+mRuleSize = ruleSize . mrule
+
 -- fairness : rules with marker
 data MRule = MRule{
     mrule :: Rule,
@@ -58,11 +66,26 @@ allMarked :: [MRule] -> Bool
 allMarked = all marked
 
 -- find if there's an unmarked rule in rule list
-findUnmarked :: [MRule] -> Maybe (MRule, [MRule])
-findUnmarked rls =
+findUnmarkedNaive :: [MRule] -> Maybe (MRule, [MRule])
+findUnmarkedNaive rls =
     case span marked rls of -- break (not . marked) == span marked (cut the list at the first unmarked position)
         (before, x : after) -> Just (x, before ++ after)
         (_, []) -> Nothing -- going through all elements in the list and we didn't find this kind of unmarked rule
+
+findUnmarked :: [MRule] -> Maybe (MRule, [MRule])
+findUnmarked rls =
+  case candidates of
+    [] -> Nothing
+    _  ->
+      let (i, r) = minimumBy (comparing (mRuleSize . snd)) candidates
+      in Just (r, take i rls ++ drop (i + 1) rls)
+  where
+    candidates =
+      [ (i, r)
+      | (i, r) <- zip [0..] rls
+      , not (marked r)
+      ]
+
 
 markRule :: MRule -> MRule
 markRule a = a {marked = True}
@@ -122,7 +145,7 @@ huet p es = runFresh(outer 0 (sortEqs es) [])
                             -- deduce this critical pair to equation, add this equation to E
                             -- mark umRule
                             -- enter into inner loop again
-                            Just (umRule, r'') -> do -- rule f)
+                            Just (umRule, r'') -> trace ("SELECT RULE: " ++ pretty (mrule umRule)) $ do -- rule f)
                                 newEqs <- deduce umRule r''
                                 let newRls = markRule umRule : r''
                                 outer (n+1) (sortEqs newEqs) newRls
@@ -240,11 +263,14 @@ ax3 = Equation (app "f" [app "f" [var "x", var "y"], var "z"])          -- f(f(x
                 (app "f" [var "x", app "f" [var "y", var "z"]])         -- f(x,f(y,z))
 
 -- not convergent in 10 minutes...
+-- because of i(P)*(P*r)->r
 groupAxioms :: [Equation]
 groupAxioms = [ax1, ax2, ax3]
 
 runGroup :: Maybe [MRule]
 runGroup = huet groupPrec groupAxioms
+-- putStrLn (pretty runGroup)
+
 
 -- following are some tests for components
 -- 1.
@@ -408,6 +434,8 @@ rightGroupAxioms =
 
 runRightGroup :: Maybe [MRule]
 runRightGroup = huet groupPrec rightGroupAxioms
+-- putStrLn (pretty runRightGroup)
+
 
 -- plus test （still failed because lack of i(x * y) -> i(y) * i(x) and x * (i(x) * y) -> y).
 leftIdAx :: Equation
@@ -427,6 +455,7 @@ rightGroupPlusLeftId =
 
 -- failed because of
 -- a * (i(x * (y * a)) * z) = b * (i(x * (y * b)) * z)
+-- a e e b ? e a e b
 runRightGroupPlusLeftId :: Maybe [MRule]
 runRightGroupPlusLeftId = huetP groupPrec rightGroupPlusLeftId
 
