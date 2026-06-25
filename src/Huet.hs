@@ -7,7 +7,16 @@ import Term
 import Rewrite
 import LPO
 import CriticalPair
+import Pretty
 import Debug.Trace (trace)
+import Data.List (sortOn)
+
+prettyMRule :: MRule -> String
+prettyMRule (MRule r m) =
+  pretty r ++ "    [" ++ if m then "marked]" else "unmarked" ++ "]"
+
+instance Pretty MRule where
+  pretty = prettyMRule
 
 -- orient an equation by using term ordering
 orient :: Prec -> Equation -> Maybe Rule
@@ -27,6 +36,17 @@ mkEqFromCp cp = Equation (cpl cp) (cpr cp)
 
 mkEqsFromCps :: [CriticalPair] -> [Equation]
 mkEqsFromCps = map mkEqFromCp
+
+-- helper funciton for term size
+termSize :: Term -> Int
+termSize (VarT _) = 1
+termSize (FunAppT _ args) = 1 + sum (map termSize args)
+
+eqSize :: Equation -> Int
+eqSize (Equation l r) = termSize l + termSize r
+
+sortEqs :: [Equation] -> [Equation]
+sortEqs = sortOn eqSize
 
 -- fairness : rules with marker
 data MRule = MRule{
@@ -85,7 +105,7 @@ composeCollapse allRules newRule = foldr classify ([], [])
 
 
 huet :: Prec -> [Equation] -> Maybe [MRule]
-huet p es = runFresh(outer 0 es [])
+huet p es = runFresh(outer 0 (sortEqs es) [])
   where -- es = E_0, [] = R_0
     -- TODO: Is preprocessing needed here??
     outer :: Int -> [Equation] -> [MRule] -> Fresh(Maybe [MRule])
@@ -105,7 +125,7 @@ huet p es = runFresh(outer 0 es [])
                             Just (umRule, r'') -> do -- rule f)
                                 newEqs <- deduce umRule r''
                                 let newRls = markRule umRule : r''
-                                outer (n+1) newEqs newRls
+                                outer (n+1) (sortEqs newEqs) newRls
     inner :: [Equation] -> [MRule] -> Fresh(Maybe [MRule]) -- step from a to e
     inner [] rls = pure (Just rls)
     inner (eq : eqs) rls = do
@@ -115,14 +135,14 @@ huet p es = runFresh(outer 0 es [])
             normal_rhs = normalize rls' (eqr eq)
         if normal_lhs == normal_rhs then inner eqs rls
            else case orient p (Equation normal_lhs normal_rhs) of
-                    Nothing -> trace ("FAILED ORIENT: " ++ show normal_lhs ++ "  =?=  " ++ show normal_rhs) $
+                    Nothing -> trace ("FAILED ORIENT: " ++ pretty (Equation normal_lhs normal_rhs)) $
                         pure Nothing -- rule d)
                     Just newRule -> 
-                        trace ("ORIENT: " ++ show (lhs newRule) ++ "  ->  " ++ show (rhs newRule)) $
+                        trace ("ORIENT: " ++ pretty newRule) $
                         let allRules = newRule : rls'
                             (keptMRs, collapsedEqs) = composeCollapse allRules newRule rls
                             newMR = MRule newRule False
-                        in inner (collapsedEqs ++ eqs) (newMR : keptMRs)
+                        in inner (sortEqs (collapsedEqs ++ eqs)) (newMR : keptMRs)
 
                     -- filter out rules in R which cannot been reduced by newRule
                     -- keep the lhs of those rules and normalize rhs by R ∪ {newRule}, inherit marker
@@ -130,6 +150,83 @@ huet p es = runFresh(outer 0 es [])
                     -- add newRule to this new rule set
                     -- remove eq from the original equation set
                     -- add new equations to the equation set: new equations are from those reduced rules(keep the reduced lhs and keep rhs unchanged)
+
+-- huet with postpone
+huetP :: Prec -> [Equation] -> Maybe [MRule]
+huetP p es = runFresh (outer 0 (sortEqs es) [])
+  where
+    maxOuter :: Int
+    maxOuter = 100
+
+    maxPostpone :: Int
+    maxPostpone = 200
+
+    maxRules :: Int
+    maxRules = 500
+
+    maxEqs :: Int
+    maxEqs = 1000
+
+    outer :: Int -> [Equation] -> [MRule] -> Fresh (Maybe [MRule])
+    outer n eqs rls
+      | n > maxOuter =
+          trace ("STOP: max outer reached at " ++ show n) $
+          pure Nothing
+      | length rls > maxRules =
+          trace ("STOP: too many rules: " ++ show (length rls)) $
+          pure Nothing
+      | length eqs > maxEqs =
+          trace ("STOP: too many equations: " ++ show (length eqs)) $
+          pure Nothing
+      | null eqs && allMarked rls =
+          pure (Just rls)
+      | otherwise =
+          trace ("outer " ++ show n
+            ++ ": |E|=" ++ show (length eqs)
+            ++ " |R|=" ++ show (length rls)
+            ++ " marked=" ++ show (length (filter marked rls))) $ do
+            res <- inner maxPostpone (sortEqs eqs) rls
+            case res of
+              Nothing -> pure Nothing
+              Just r' ->
+                case findUnmarked r' of
+                  Nothing -> pure (Just r')
+                  Just (umRule, r'') -> do
+                    newEqs <- deduce umRule r''
+                    let newRls = markRule umRule : r''
+                    outer (n + 1) (sortEqs newEqs) newRls
+
+    inner :: Int -> [Equation] -> [MRule] -> Fresh (Maybe [MRule])
+    inner _ [] rls = pure (Just rls)
+    inner postponeLeft (eq : eqs) rls = do
+      let rls' = map mrule rls
+          normal_lhs = normalize rls' (eql eq)
+          normal_rhs = normalize rls' (eqr eq)
+          normalizedEq = Equation normal_lhs normal_rhs
+
+      if normal_lhs == normal_rhs
+        then inner postponeLeft eqs rls
+        else case orient p normalizedEq of
+          Nothing ->
+            if postponeLeft <= 0
+              then
+                trace ("FAILED ORIENT after postponing: "
+                  ++ show normal_lhs ++ "  =?=  " ++ show normal_rhs) $
+                pure Nothing
+              else
+                trace ("POSTPONE: "
+                  ++ show normal_lhs ++ "  =?=  " ++ show normal_rhs) $
+                inner (postponeLeft - 1) (sortEqs (eqs ++ [normalizedEq])) rls
+
+          Just newRule ->
+            trace ("ORIENT: "
+              ++ show (lhs newRule) ++ "  ->  " ++ show (rhs newRule)) $
+            let allRules = newRule : rls'
+                (keptMRs, collapsedEqs) = composeCollapse allRules newRule rls
+                newMR = MRule newRule False
+            in inner maxPostpone
+                 (sortEqs (collapsedEqs ++ eqs))
+                 (newMR : keptMRs)
 
 
 -- test with group axioms
@@ -253,6 +350,7 @@ friendlyGroupAxioms =
 
 runFriendlyGroup :: Maybe [MRule]
 runFriendlyGroup = huet groupPrec friendlyGroupAxioms
+-- putStrLn (pretty runFriendlyGroup)
 
 -- test with Monoid
 monoidPrec :: Prec
@@ -279,9 +377,10 @@ monoidAxioms = [monoidAx1, monoidAx2, monoidAx3]
 
 runMonoid :: Maybe [MRule]
 runMonoid = huet monoidPrec monoidAxioms
+--putStrLn (pretty runMonoid)
 
 -- another try with group axioms
--- result: not better....
+-- result: failed because of e * x -> x
 rightGroupAx1 :: Equation
 rightGroupAx1 =
   Equation
@@ -309,3 +408,133 @@ rightGroupAxioms =
 
 runRightGroup :: Maybe [MRule]
 runRightGroup = huet groupPrec rightGroupAxioms
+
+-- plus test （still failed because lack of i(x * y) -> i(y) * i(x) and x * (i(x) * y) -> y).
+leftIdAx :: Equation
+leftIdAx =
+  Equation
+    (app "f" [app "e" [], var "x"])
+    (var "x")
+
+rightGroupPlusLeftId :: [Equation]
+rightGroupPlusLeftId =
+  [ rightGroupAx1
+  , rightGroupAx2
+  , rightGroupAx3
+  , leftIdAx
+  ]
+
+
+-- failed because of
+-- a * (i(x * (y * a)) * z) = b * (i(x * (y * b)) * z)
+runRightGroupPlusLeftId :: Maybe [MRule]
+runRightGroupPlusLeftId = huetP groupPrec rightGroupPlusLeftId
+
+-- exponential
+idemMonoidPrec :: Prec
+idemMonoidPrec = precFromList ["f", "e"]
+
+idemAx :: Equation
+idemAx =
+  Equation
+    (app "f" [var "x", var "x"])
+    (var "x")
+
+idemMonoidAxioms :: [Equation]
+idemMonoidAxioms =
+  [ monoidAx1
+  , monoidAx2
+  , monoidAx3
+  , idemAx
+  ]
+
+runIdemMonoid :: Maybe [MRule]
+runIdemMonoid = huetP idemMonoidPrec idemMonoidAxioms
+
+-- exponential
+bandPrec :: Prec
+bandPrec = precFromList ["f"]
+
+bandAxioms :: [Equation]
+bandAxioms =
+  [ monoidAx3
+  , idemAx
+  ]
+
+runBand :: Maybe [MRule]
+runBand = huet bandPrec bandAxioms
+
+-- succeed
+natPlusPrec :: Prec
+natPlusPrec = precFromList ["plus", "s", "zero"]
+
+natPlusAxioms :: [Equation]
+natPlusAxioms =
+  [ Equation
+      (app "plus" [app "zero" [], var "y"])
+      (var "y")
+  , Equation
+      (app "plus" [app "s" [var "x"], var "y"])
+      (app "s" [app "plus" [var "x", var "y"]])
+  ]
+
+runNatPlus :: Maybe [MRule]
+runNatPlus = huet natPlusPrec natPlusAxioms
+-- putStrLn (pretty runNatPlus)
+
+-- succeed
+zeroMonoidPrec :: Prec
+zeroMonoidPrec = precFromList ["f", "z", "e"]
+
+leftZeroAx :: Equation
+leftZeroAx =
+  Equation
+    (app "f" [app "z" [], var "x"])
+    (app "z" [])
+
+zeroMonoidAxioms :: [Equation]
+zeroMonoidAxioms =
+  [ monoidAx1
+  , monoidAx2
+  , monoidAx3
+  , leftZeroAx
+  ]
+
+runZeroMonoid :: Maybe [MRule]
+runZeroMonoid = huet zeroMonoidPrec zeroMonoidAxioms
+-- putStrLn (pretty runZeroMonoid)
+
+-- example from wikipedia
+one :: Term
+one = app "e" []
+
+cx :: Term
+cx = app "x" []
+
+cy :: Term
+cy = app "y" []
+
+mul :: Term -> Term -> Term
+mul a b = app "f" [a, b]
+
+pow :: Term -> Int -> Term
+pow t 1 = t
+pow t n = mul t (pow t (n - 1))
+
+wikiPrec :: Prec
+wikiPrec = precFromList ["f", "x", "y", "e"]
+
+wikiMonoidAxioms :: [Equation]
+wikiMonoidAxioms =
+  [ Equation (mul one (var "z")) (var "z")
+  , Equation (mul (var "z") one) (var "z")
+  , Equation (mul (mul (var "a") (var "b")) (var "c"))
+             (mul (var "a") (mul (var "b") (var "c")))
+  , Equation (pow cx 3) one
+  , Equation (pow cy 3) one
+  , Equation (pow (mul cx cy) 3) one
+  ]
+
+runWikiMonoid :: Maybe [MRule]
+runWikiMonoid = huet wikiPrec wikiMonoidAxioms
+-- putStrLn (pretty runWikiMonoid)

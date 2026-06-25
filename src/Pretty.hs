@@ -29,7 +29,6 @@ printCPs = mapM_ (putStrLn . prettyCP)
 printMaybeRule :: Maybe Rule -> IO ()
 printMaybeRule = putStrLn . prettyMaybeRule
 
-
 -- define my own pretty print class as unified interface!
 class Pretty a where
   pretty :: a -> String
