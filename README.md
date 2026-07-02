@@ -1,3 +1,11 @@
+# teLe
+
+teLe is a Haskell implementation of [Knuth–Bendix completion](https://en.wikipedia.org/wiki/Knuth–Bendix_completion_algorithm) (KBC) with the
+[lexicographic path ordering](https://en.wikipedia.org/wiki/Lexicographic_order) (LPO). Given a set of equational axioms, it attempts to derive a canonical rewrite system; when completion succeeds, equational reasoning becomes a decision procedure by normalization.
+
+
+---
+
 # Goal : core deliverable for praktika
 
 1. Implementation(done)
@@ -18,6 +26,8 @@
   - ordered rewriting with unorientable equations
   - test on TPTP examples, study the comparison with classical completion loop
 
+---
+
 ## Example : Uniqueness of Inverses
 
 Given the group axioms and an additional assumption that `a2` is a left inverse of `a`,
@@ -36,10 +46,12 @@ decideEq rs $
 
 The completion procedure derives a canonical rewrite system from the axioms. Equality is then decided by normalization, automatically proving that the left inverse `a2` is equal to the inverse `i(a)`.
 
+---
 
 # Future work: proof reconstruction in Lean
  Reimplementation in Lean's metaprogramming framework
 
+---
 
 ## Project Structure
 
@@ -56,6 +68,7 @@ The completion procedure derives a canonical rewrite system from the axioms. Equ
 | 1     | `LPO.hs`          | Term              | possible optimization
 | 0     | `Term.hs`         | — (foundation)    |
 
+---
 
 ## References :
 
