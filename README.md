@@ -1,7 +1,7 @@
 # teLe
 
 teLe is a Haskell implementation of [Knuth–Bendix completion](https://en.wikipedia.org/wiki/Knuth–Bendix_completion_algorithm) (KBC) with the
-[lexicographic path ordering](https://en.wikipedia.org/wiki/Lexicographic_order) (LPO). Given a set of equational axioms, it attempts to derive a canonical rewrite system; when completion succeeds, equational reasoning becomes a decision procedure by normalization.
+[lexicographic path ordering](https://en.wikipedia.org/wiki/Path_ordering_(term_rewriting)) (LPO). Given a set of equational axioms, it attempts to derive a canonical rewrite system; when completion succeeds, equational reasoning becomes a decision procedure by normalization.
 
 
 ---
