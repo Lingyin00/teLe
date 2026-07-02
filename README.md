@@ -15,7 +15,7 @@
   - Profiling and optimization.
 
 4. Unfailing completion(TODO)
-  - implementation (bidirectional orientation, LPO, modification on huet loop, etc)
+  - ordered rewriting with unorientable equations
   - test on TPTP examples, study the comparison with classical completion loop
 
 ## Example : Uniqueness of Inverses
@@ -38,7 +38,7 @@ The completion procedure derives a canonical rewrite system from the axioms. Equ
 
 
 # Future work: proof reconstruction in Lean
-Implementation of unfailing loop using metaprogramming API instead of self-defined inductive types
+ Reimplementation in Lean's metaprogramming framework
 
 
 ## Project Structure
