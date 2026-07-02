@@ -9,7 +9,7 @@ import Rewrite
 -- the unfailing Knuth-Bendix Completion
 -- ==================================================
 -- step 1: using LPO and Prec to orient all the equations into rules
--- step 2: 
+-- step 2: TODO
 
 
 
