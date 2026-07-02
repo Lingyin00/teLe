@@ -14,7 +14,7 @@
   - KBO for problems where LPO fails to orient.
   - Profiling and optimization.
 
-4. Unfailing completion
+4. Unfailing completion(TODO)
   - implementation (bidirectional orientation, LPO, modification on huet loop, etc)
   - test on TPTP examples, study the comparison with classical completion loop
 
@@ -62,7 +62,7 @@ Implementation of unfailing loop using metaprogramming API instead of self-defin
 - [Simple Word Problems in Universal Algebra](https://www.cs.tufts.edu/~nr/cs257/archive/don-knuth/knuth-bendix.pdf): the original paper from Knuth&Bendix
 
 - [Term Rewriting Systems](https://joerg.endrullis.de/trs/) : general theoretical background
-- [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707) : Chapter 7.2, for the implementation of Huet's completion loop
+- [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707) : Chapter 7.4, for the implementation of Huet's completion loop
 - [Twee: An Equational Theorem Prover (System Description) ](https://smallbone.se/papers/twee.pdf)
 - [THINGS TO KNOW WHEN IMPLEMENTING LPO](https://www.worldscientific.com/doi/abs/10.1142/S0218213006002564) : implementation of naive LPO
 
