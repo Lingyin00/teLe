@@ -1,11 +1,9 @@
 module Examples where
 
 import Term
-import Pretty
 import LPO 
 import Rewrite
 import Huet
-import CriticalPair
 
 -- using the TRS to normalize equations
 huetRules :: Maybe [MRule] -> Maybe [Rule]

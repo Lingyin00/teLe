@@ -2,7 +2,6 @@ module Matching where
 
 import Term 
 import Substitution
-import Data.Map (Map)
 import qualified Data.Map as Map
 
 -- giving two terms s,t, try to compute a subsitution σ such that sσ = t

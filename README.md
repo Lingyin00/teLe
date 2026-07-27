@@ -62,7 +62,7 @@ The completion procedure derives a canonical rewrite system from the axioms. Equ
 |7| `Huet.hs`(classical completion) | 0 - 6| 
 | 6| `CriticalPair.hs` | 0 - 5       | unfailing version |
 | 5    | `Rewrite.hs`          | 0 - 4              | 
-| 4     | `Unification.hs`  | Matching          | possible optimization: MM|
+| 4     | `Unification.hs`  | Matching          | possible optimization: Martelli-Montanari|
 | 3     | `Matching.hs`     | Substitution      |
 | 2     | `Substitution.hs` | Term              |
 | 1     | `LPO.hs`          | Term              | possible optimization

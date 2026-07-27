@@ -126,14 +126,13 @@ composeCollapse allRules newRule = foldr classify ([], [])
              let d' = normalize allRules d
              in (mr { mrule = Rule g d' } : keptAcc, eqAcc)
 
-
 huet :: Prec -> [Equation] -> Maybe [MRule]
 huet p es = runFresh(outer 0 (sortEqs es) [])
   where -- es = E_0, [] = R_0
     -- TODO: Is preprocessing needed here??
     outer :: Int -> [Equation] -> [MRule] -> Fresh(Maybe [MRule])
     outer n eqs rls 
-      | n > 100    = trace ("STOP at " ++ show n) $ pure (Just rls)
+      | n > 500    = trace ("STOP at " ++ show n) $ pure (Just rls)
       | null eqs && allMarked rls = pure(Just rls)
       | otherwise = trace ("outer " ++ show n ++ ": |E|=" ++ show (length eqs) ++ " |R|=" ++ show (length rls) ++ " marked=" ++ show (length (filter marked rls))) $ do-- enter into the inner loop
         res <- inner eqs rls
@@ -173,83 +172,6 @@ huet p es = runFresh(outer 0 (sortEqs es) [])
                     -- add newRule to this new rule set
                     -- remove eq from the original equation set
                     -- add new equations to the equation set: new equations are from those reduced rules(keep the reduced lhs and keep rhs unchanged)
-
--- huet with postpone
-huetP :: Prec -> [Equation] -> Maybe [MRule]
-huetP p es = runFresh (outer 0 (sortEqs es) [])
-  where
-    maxOuter :: Int
-    maxOuter = 100
-
-    maxPostpone :: Int
-    maxPostpone = 200
-
-    maxRules :: Int
-    maxRules = 500
-
-    maxEqs :: Int
-    maxEqs = 1000
-
-    outer :: Int -> [Equation] -> [MRule] -> Fresh (Maybe [MRule])
-    outer n eqs rls
-      | n > maxOuter =
-          trace ("STOP: max outer reached at " ++ show n) $
-          pure Nothing
-      | length rls > maxRules =
-          trace ("STOP: too many rules: " ++ show (length rls)) $
-          pure Nothing
-      | length eqs > maxEqs =
-          trace ("STOP: too many equations: " ++ show (length eqs)) $
-          pure Nothing
-      | null eqs && allMarked rls =
-          pure (Just rls)
-      | otherwise =
-          trace ("outer " ++ show n
-            ++ ": |E|=" ++ show (length eqs)
-            ++ " |R|=" ++ show (length rls)
-            ++ " marked=" ++ show (length (filter marked rls))) $ do
-            res <- inner maxPostpone (sortEqs eqs) rls
-            case res of
-              Nothing -> pure Nothing
-              Just r' ->
-                case findUnmarked r' of
-                  Nothing -> pure (Just r')
-                  Just (umRule, r'') -> do
-                    newEqs <- deduce umRule r''
-                    let newRls = markRule umRule : r''
-                    outer (n + 1) (sortEqs newEqs) newRls
-
-    inner :: Int -> [Equation] -> [MRule] -> Fresh (Maybe [MRule])
-    inner _ [] rls = pure (Just rls)
-    inner postponeLeft (eq : eqs) rls = do
-      let rls' = map mrule rls
-          normal_lhs = normalize rls' (eql eq)
-          normal_rhs = normalize rls' (eqr eq)
-          normalizedEq = Equation normal_lhs normal_rhs
-
-      if normal_lhs == normal_rhs
-        then inner postponeLeft eqs rls
-        else case orient p normalizedEq of
-          Nothing ->
-            if postponeLeft <= 0
-              then
-                trace ("FAILED ORIENT after postponing: "
-                  ++ show normal_lhs ++ "  =?=  " ++ show normal_rhs) $
-                pure Nothing
-              else
-                trace ("POSTPONE: "
-                  ++ show normal_lhs ++ "  =?=  " ++ show normal_rhs) $
-                inner (postponeLeft - 1) (sortEqs (eqs ++ [normalizedEq])) rls
-
-          Just newRule ->
-            trace ("ORIENT: "
-              ++ show (lhs newRule) ++ "  ->  " ++ show (rhs newRule)) $
-            let allRules = newRule : rls'
-                (keptMRs, collapsedEqs) = composeCollapse allRules newRule rls
-                newMR = MRule newRule False
-            in inner maxPostpone
-                 (sortEqs (collapsedEqs ++ eqs))
-                 (newMR : keptMRs)
 
 
 -- test with group axioms
@@ -457,7 +379,7 @@ rightGroupPlusLeftId =
 -- a * (i(x * (y * a)) * z) = b * (i(x * (y * b)) * z)
 -- a e e b ? e a e b
 runRightGroupPlusLeftId :: Maybe [MRule]
-runRightGroupPlusLeftId = huetP groupPrec rightGroupPlusLeftId
+runRightGroupPlusLeftId = huet groupPrec rightGroupPlusLeftId
 
 -- exponential
 idemMonoidPrec :: Prec
@@ -478,7 +400,7 @@ idemMonoidAxioms =
   ]
 
 runIdemMonoid :: Maybe [MRule]
-runIdemMonoid = huetP idemMonoidPrec idemMonoidAxioms
+runIdemMonoid = huet idemMonoidPrec idemMonoidAxioms
 
 -- exponential
 bandPrec :: Prec
