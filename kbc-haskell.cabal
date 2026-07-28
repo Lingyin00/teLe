@@ -65,8 +65,13 @@ library
         CriticalPair
         Pretty
         Huet
-        Examples
+        Decide
         ExamplesFromKnuth
+        TPTP.Pelletier_syn0801
+        TPTP.Napoleon_grp7771
+        TPTP.Moufang_grp6602
+        TPTP.Assoc_syn0831
+        TPTP.Inverse_grp77001
     -- Modules included in this library but not exported.
     -- other-modules:
 

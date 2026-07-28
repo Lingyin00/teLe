@@ -356,7 +356,7 @@ result10 = putStrLn (pretty testLoop)
 -- The third precedence reproduces Knuth's result, including the
 -- consequence i(i(x)) -> x, which the paper reports as the 29th consequence derived.
 
--- | Precedence t > h > i > f > e.
+-- | Precedence h > t > i > f > e.
 tausskyP :: Prec
 tausskyP = precFromList ["h", "t", "i", "f", "e"]
 
