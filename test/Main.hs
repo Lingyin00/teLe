@@ -1,50 +1,67 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Main where
 
 import Term
-import Substitution
-import Matching      (match)
-import Unification   (unify)
 import Rewrite
-       ( Rule(..)
-       , nonVarPos
-       , freshVar, renameRule
-       , rewriteAt, rewriteStep, normalize
-       )
 import LPO           (lpoNaive, Prec, precFGA)
 
 import Control.Monad.State (evalState)
-import qualified Data.Map as Map
+import System.Exit   (exitFailure)
 import qualified Data.Set as Set
 import Data.Set (Set)
 import Test.QuickCheck
+import Data.Maybe
+import Control.Monad
+
+main :: IO ()
+main = do
+  rs <- sequence
+    [ putStrLn "== position round-trip ==" >> quickCheckResult prop_replace_subterm_roundtrip
+    , quickCheckResult prop_subterm_after_replace
+    , putStrLn "== nonVarPositions =="     >> quickCheckResult prop_nonVarPos_correct
+    , quickCheckResult prop_nonVarPos_complete
+    , putStrLn "== renameRule =="          >> quickCheckResult prop_rename_disjoint
+    , quickCheckResult prop_rename_structure
+    , quickCheckResult prop_rename_two_disjoint
+    , putStrLn "== rewrite + LPO =="       >> quickCheckResult prop_rules_oriented
+    , quickCheckResult prop_rewrite_decreases
+    , quickCheckResult prop_normalize_is_nf
+    ]
+  unless (all isSuccess rs) exitFailure
 
 -- ============================================================
 -- define a  precedence to do test "s >_lpo t"
 -- ============================================================
 testPrec :: Prec
-testPrec = precFGA                    -- f > g > a > b
+testPrec = precFGA                   -- f > g > a > b
 
 lpoGt :: Term -> Term -> Bool
 lpoGt = lpoNaive testPrec             -- s >_lpo t
+
+sig :: [(String, Int)]
+sig = [("f", 2), ("g", 1), ("a", 0), ("b", 0)]
+
+consts :: [(String, Int)]
+consts = filter ((== 0) . snd) sig
 
 -- ============================================================
 -- 0. Arbitrary instance
 --    variabels {x,y,z}，function symbols {f,g,h}，constans {a,b}
 -- ============================================================
+
 instance Arbitrary Term where
   arbitrary = sized genTerm
     where
       genTerm :: Int -> Gen Term
       genTerm n
-        | n <= 0    = oneof [genVar, genConst]
-        | otherwise = oneof [genVar, genConst, genApp n]
+        | n <= 0    = oneof [genVar, genApp consts 0]
+        | otherwise = frequency [(1,genVar), (3, genApp sig n)]
 
-      genVar   = VarT . Var <$> elements ["x", "y", "z"]
-      genConst = (\c -> FunAppT (FuncSym c) []) <$> elements ["a", "b"]
-      genApp n = do
-        f  <- elements ["f", "g", "h"]
-        k  <- choose (1, 2)
+      genVar = VarT . Var <$> elements ["x", "y", "z"]
+
+      genApp table n = do
+        (f, k) <- elements table
         ts <- vectorOf k (genTerm (n `div` 2))
         pure (FunAppT (FuncSym f) ts)
 
@@ -57,19 +74,16 @@ instance Arbitrary Rule where
     where
       isFunApp (FunAppT _ _) = True
       isFunApp _             = False
-      genConst = (\c -> FunAppT (FuncSym c) []) <$> elements ["a", "b"]
-      genOver vs n
-        | n <= 0 || null vs =
-            oneof (genConst : [pure (VarT v) | v <- vs])
-        | otherwise =
-            oneof $
-              [pure (VarT v) | v <- vs] ++
-              [ genConst
-              , do f  <- elements ["f", "g"]
-                   k  <- choose (1, 2)
-                   ts <- vectorOf k (genOver vs (n `div` 2))
-                   pure (FunAppT (FuncSym f) ts)
-              ]
+      genOver vs n = frequency $
+           [ (1, VarT <$> elements vs) | not (null vs) ]
+        ++ [ (3, genApp) ]
+        where
+          table | n <= 0    = consts
+                | otherwise = sig
+          genApp = do
+            (f, k) <- elements table
+            ts <- vectorOf k (genOver vs (n `div` 2))
+            pure (FunAppT (FuncSym f) ts)
 
 varsRule :: Rule -> Set Var
 varsRule (Rule l r) = vars l `Set.union` vars r
@@ -157,24 +171,5 @@ prop_rewrite_decreases t =
 -- normalize: the output is normal form（depending termination）
 prop_normalize_is_nf :: Term -> Bool
 prop_normalize_is_nf t =
-  rewriteStep orientedRules (normalize orientedRules t) == Nothing
+  isNothing (rewriteStep orientedRules (normalize orientedRules t) )
 
--- ============================================================
--- input
--- ============================================================
-main :: IO ()
-main = do
-  putStrLn "== position round-trip =="
-  quickCheck prop_replace_subterm_roundtrip
-  quickCheck prop_subterm_after_replace
-  putStrLn "== nonVarPositions =="
-  quickCheck prop_nonVarPos_correct
-  quickCheck prop_nonVarPos_complete
-  putStrLn "== renameRule =="
-  quickCheck prop_rename_disjoint
-  quickCheck prop_rename_structure
-  quickCheck prop_rename_two_disjoint
-  putStrLn "== rewrite + LPO (differential) =="
-  quickCheck prop_rules_oriented          -- must be satisfied first
-  quickCheck prop_rewrite_decreases
-  quickCheck prop_normalize_is_nf

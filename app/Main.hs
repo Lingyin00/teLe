@@ -1,6 +1,11 @@
 module Main where
+import ExamplesFromKnuth as Knuth
+import Decide 
 
 main :: IO ()
 main = do
-  putStrLn "Hello, Haskell!"
+  _ <- Knuth.runAll
+  putStrLn ""
+  _ <- Decide.runDecide
+  pure ()
 

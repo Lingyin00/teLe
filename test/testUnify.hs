@@ -1,10 +1,15 @@
-module testUnify where
+-- | 
+-- property test for naive unification
+
+{-# OPTIONS_GHC -Wno-orphans #-}
+module Main where
 
 import Test.QuickCheck
-import qualified Data.Map as Map
 import Term
 import Substitution
 import Unification
+import Control.Monad (unless)
+import System.Exit (exitFailure)
 
 -- Random Term generator: small variable/symbol domains so that s and t
 -- are likely to share variables, which is what actually exercises propagation
@@ -42,9 +47,9 @@ prop_idempotent s t = case unify s t of
 
 main :: IO ()
 main = do
-  putStrLn "prop_unify_sound:"
-  quickCheck prop_unify_sound
-  putStrLn "prop_unify_self:"
-  quickCheck prop_unify_self
-  putStrLn "prop_idempotent:"
-  quickCheck prop_idempotent
+  rs <- sequence
+    [ putStrLn "prop_unify_sound:" >> quickCheckResult prop_unify_sound,
+      putStrLn "prop_unify_self:" >> quickCheckResult prop_unify_self,
+      putStrLn "prop_idempotent:" >>quickCheckResult prop_idempotent
+    ]
+  unless (all isSuccess rs) exitFailure

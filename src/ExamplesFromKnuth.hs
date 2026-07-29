@@ -12,33 +12,35 @@ import LPO
 import Rewrite
 import Huet
 import Pretty
+import System.CPUTime (getCPUTime)
+import Control.Exception (evaluate)
+import Text.Printf (printf)
 
 -- ==== Summary===========================================================
 --
 -- @
--- ---------------------------------------------------------------------
---  #    Example                  Result        Knuth
--- ---------------------------------------------------------------------
---  1    Group theory             10 rules      10 rules
---  2    Group theory II          see below     rule 20 reversed
---  3    Group theory III         see below     -
---  4    Inverse property          3 rules       3 rules
---  5    Group theory IV          see below     12 rules
---  6    Central groupoids I       3 rules       3 rules
---  7    A "random" axiom         FAIL          FAIL
---  8    Another "random" axiom   FAIL          FAIL (degenerate)
---  9A   Cancellation              2 rules       2 rules
---  9B   Cancellation + unit       8 rules       8 rules
--- 10    Loops                     2 rules       2 rules
--- 11    Group theory V           12 rules      12 rules, 2m15s
--- 12    (l,r) systems I           9 rules      10 rules, 110s
--- 13    (r,l) systems            12 rules      HALTED, new operator needed
--- 14    (l,r) systems II         12 rules      21 rules, after restart
--- 15    (l,r) systems III        15 rules      DIVERGED at 32 axioms
--- 16    Central groupoids II     FAIL          13 rules, 9 min
--- 17    Central groupoids III    see below     25 rules, ~2 min
--- 18    Burnside groups          FAIL          FAIL
--- ---------------------------------------------------------------------
+-- #    Example                  Result       Expected     Knuth                    time
+--------------------------------------------------------------------------------------
+-- 1    Group theory             10 rules     10 rules     10 rules, 30 s          0.00s
+-- 2    Group theory II          FAIL         FAIL         FAIL                    0.00s
+-- 3    Group theory III         10 rules     10 rules     24 rules(8 redundant), 40 s    0.00s
+-- 4    Inverse property         3 rules      3 rules      3 rules(per hand)       0.00s
+-- 5    Group theory IV          12 rules     12 rules     12 rules, 50 s          0.00s
+-- 6    Central groupoids I      3 rules      3 rules      3 rules(per hand)       0.00s
+-- 7    Random axiom             FAIL         FAIL         FAIL(degenerate)        0.00s
+-- 8    Random axiom II          FAIL         FAIL         FAIL (degenerate)       0.00s
+-- 9A   Cancellation             2 rules      2 rules      2 rules                 0.00s
+-- 9B   Cancellation + unit      8 rules      8 rules      8 rules                 0.00s
+-- 10   Loops                    14 rules     14 rules     10 rules, 20s           0.00s
+-- 11   Group theory V           12 rules     12 rules     12 rules, 2m15s         0.02s
+-- 12   (l,r) systems I          9 rules      9 rules      10 rules, 110s          0.00s
+-- 13   (r,l) systems            12 rules     12 rules     HALTED                  0.02s
+-- 14   (l,r) systems II         12 rules     12 rules     21 rules, restart,2.5 min    0.00s
+-- 15   (l,r) systems III        15 rules     15 rules     FAIL(degenerate)        0.04s
+-- 16   Central groupoids II     FAIL         FAIL         13 rules, 9 min         0.00s
+-- 17   Central groupoids III    5 rules      5 rules      25 rules, 2 min         0.00s
+-- 18   Burnside groups          FAIL         FAIL         FAIL                    0.00s
+--------------------------------------------------------------------------------------
 -- @
 
 -- ==== Three kinds of failure==========================================
@@ -126,6 +128,7 @@ result1 = putStrLn (pretty testGroup)
 
 -- ========================================================================
 -- Example 2: group theory II.
+-- Result: FAILED ORIENT: f(_v332,i(_v334)) ≐ i(f(_v334,i(_v332)))
 -- Same axioms as Example 1, but with precedence f > i instead of i > f.
 -- Under KBO this corresponds to giving the inverse operator positive weight;
 -- the only effect is that rule 20 is oriented in the opposite direction,
@@ -328,6 +331,22 @@ testLoop = huet loopP [loopLeft, loopRight]
 result10 :: IO ()
 result10 = putStrLn (pretty testLoop)
 
+-- part 10.2
+loopPU :: Prec
+loopPU = precFromList ["ldiv", "rdiv", "f", "e"]
+
+testLoopUnit :: Maybe [MRule]
+testLoopUnit = huet loopPU [loopLeft, loopRight, leftid, rightid]
+
+-- part 10.3
+loopPC :: Prec
+loopPC = precFromList ["lc", "rc", "ldiv", "rdiv", "f", "e"]
+
+testLoopFull :: Maybe [MRule]
+testLoopFull =
+  huet loopPC [loopLeft, loopRight, leftid, rightid, leftCancel, rightCancel]
+result10f :: IO ()
+result10f = putStrLn (pretty testLoopFull)
 -- ======================================================================
 -- Example 11: group theory V (Taussky).
 -- Associativity, an idempotent e, at least one right inverse,
@@ -554,15 +573,6 @@ result15 = putStrLn (pretty testClifford)
 -- which no LPO can orient: the sides differ only in one position, holding
 -- the distinct variables x and y, and distinct variables are incomparable
 -- under any precedence. Both s1 > s2 and s2 > s1 were tried.
---
--- A KBO cannot orient it either, so the equation is presumably never
--- generated in Knuth's run: which critical pairs arise depends on the
--- shape of the rules produced so far. We have not verified this.
---
--- This marks the limit of the precedence strategy of Examples 12 to 15.
--- There the obstruction is the orientation of nested unary symbols, which
--- the precedence controls; here it is a comparison between two variables,
--- which it does not.
 
 -- | Precedence s1 > s2 > f.
 cg2P :: Prec
@@ -600,6 +610,7 @@ result16 = putStrLn (pretty testCG2)
 
 -- ============================================================
 -- Example 17:
+-- result: succeed with returning 5 rules
 -- | Axioms 1 to 3 of Example 16, without the weak axiom.
 cg3Axioms :: [Equation]
 cg3Axioms = [cgSub1, cgSub2, centralGroupoid]
@@ -610,6 +621,8 @@ result17 :: IO ()
 result17 = putStrLn (pretty testCG3)
 
 -- ===========================================================
+-- Example 18:
+-- commutativity, ensured to be failed
 -- | Burnside group of exponent 3: x * (x * x) = e.
 burnside :: Equation
 burnside =
@@ -624,3 +637,73 @@ testBurnside :: Maybe [MRule]
 testBurnside = huet groupP burnsideAxioms
 result18 :: IO ()  
 result18 = putStrLn (pretty testBurnside)
+
+-- =======================
+-- outcome:
+data Outcome = Rules Int | Fails
+  deriving Eq
+
+instance Show Outcome where
+  show (Rules n) = show n ++ " rules"
+  show Fails     = "FAIL"
+
+data Example = Example
+  { exNo       :: String
+  , exName     :: String
+  , exPrec     :: Prec
+  , exAxioms   :: [Equation]
+  , exExpected :: Outcome     -- expected
+  , exKnuth    :: String      -- from Knuth
+  }
+
+examples :: [Example]
+examples =
+  [ Example "1"   "Group theory"          groupP     groupAxiom       (Rules 10) "10 rules, 30 s"
+  , Example "2"   "Group theory II"       groupP2    groupAxiom       Fails  "FAIL"
+  , Example "3"   "Group theory III"      groupP     groupAxiomR      (Rules 10) "24 rules(8 redundant), 40 s"
+  , Example "4"   "Inverse property"      invP       [invProp]        (Rules 3)  "3 rules(per hand)"
+  , Example "5"   "Group theory IV"       groupP4    groupAxiom4      (Rules 12) "12 rules, 50 s"
+  , Example "6"   "Central groupoids I"   cgP        [centralGroupoid](Rules 3)  "3 rules(per hand)"
+  , Example "7"   "Random axiom"          randomP    [randomAxiom]    Fails      "FAIL(degenerate)"
+  , Example "8"   "Random axiom II"       degenP     [degenAxiom]     Fails      "FAIL (degenerate)"
+  , Example "9A"  "Cancellation"          cancelP    [leftCancel, rightCancel]        (Rules 2) "2 rules"
+  , Example "9B"  "Cancellation + unit"   cancelP    [leftCancel, rightCancel, leftid, rightid] (Rules 8) "8 rules"
+  , Example "10"  "Loops"                 loopPC      [loopLeft, loopRight, leftid, rightid, leftCancel, rightCancel]  (Rules 14)  "10 rules, 20s"
+  , Example "11"  "Group theory V"        tausskyP   tausskyAxioms    (Rules 12) "12 rules, 2m15s"
+  , Example "12"  "(l,r) systems I"       groupP     lrAxioms         (Rules 9)  "10 rules, 110s"
+  , Example "13"  "(r,l) systems"         groupP     rlAxioms         (Rules 12) "HALTED"
+  , Example "14"  "(l,r) systems II"      lr2P       lr2Axioms        (Rules 12) "21 rules, restart,2.5 min"
+  , Example "15"  "(l,r) systems III"     cliffordP  cliffordAxioms   (Rules 15) "FAIL(degenerate)"
+  , Example "16"  "Central groupoids II"  cg2P       cg2Axioms        Fails      "13 rules, 9 min"
+  , Example "17"  "Central groupoids III" cg2P       cg3Axioms        (Rules 5) "25 rules, 2 min"
+  , Example "18"  "Burnside groups"       groupP     burnsideAxioms   Fails      "FAIL"
+  ]
+
+runExample :: Example -> IO (Outcome, Double)
+runExample ex = do
+  t0 <- getCPUTime
+  let out = case huet (exPrec ex) (exAxioms ex) of
+              Nothing -> Fails
+              Just rs -> Rules (length rs)
+  _  <- evaluate (case out of Rules n -> n; Fails -> 0)
+  t1 <- getCPUTime
+  pure (out, fromIntegral (t1 - t0) / 1e12)
+
+runAll :: IO Bool
+runAll = do
+  printf "%-4s %-24s %-12s %-12s %-20s %8s\n"
+         "#" "Example" "Result" "Expected" "Knuth" "time"
+  putStrLn (replicate 86 '-')
+  oks <- mapM row examples
+  putStrLn (replicate 86 '-')
+  let n = length (filter not oks)
+  printf "%d/%d matched\n" (length examples - n) (length examples)
+  pure (n == 0)
+  where
+    row ex = do
+      (got, secs) <- runExample ex
+      let ok = got == exExpected ex
+      printf "%-4s %-24s %-12s %-12s %-20s %7.2fs%s\n"
+             (exNo ex) (exName ex) (show got) (show (exExpected ex))
+             (exKnuth ex) secs (if ok then "" else "   <-- MISMATCH")
+      pure ok
