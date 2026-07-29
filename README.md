@@ -92,25 +92,31 @@ result0831
 2    inverse is unique            yes        yes           0.00s
 ----------------------------------------------------------------
 ```
-# Example : Uniqueness of Inverses
+# Example: Proving Uniqueness of Inverses
 
-Given the group axioms and an additional assumption that `a2` is a left inverse of `a`,
+The file `Decide.hs` contains small examples showing how completion can turn
+equational reasoning into a decision procedure.
 
-the completion procedure derives a canonical rewrite system from the axioms. 
-
-Equality is then decided by normalization, automatically proving that the left inverse `a2` is equal to the inverse `i(a)`.
+For example, assume the usual group axioms and add the fact that `a2` is a
+left inverse of `a`:
 
 ```haskell
 leftinvPrime =
   Equation (app "f" [app "a2" [], app "a" []]) (app "e" [])
-
+```
+Running Huet completion on the extended axiom set derives a canonical rewrite
+system:
+```haskell
 let Just rs =
   huetRules (huet groupPinv (groupAxiom ++ [leftinvPrime]))
-
+```
+Now equality can be decided by normalizing both sides. The system proves that the left inverse `a2` is equal to the canonical inverse `i(a)`:
+```haskell
 decideEq rs $
   Equation (app "a2" []) (app "i" [app "a" []])
 -- True
 ```
+
 # Analysis:
 Please see: ```ExamplesFromKnuth.hs```, ```Decide.hs```, and each haskell file under ```TPTP``` folder.
 
@@ -125,10 +131,32 @@ Please see: ```ExamplesFromKnuth.hs```, ```Decide.hs```, and each haskell file u
 
 - [Simple Word Problems in Universal Algebra](https://www.cs.tufts.edu/~nr/cs257/archive/don-knuth/knuth-bendix.pdf): the original paper from Knuth&Bendix
 
-- [Term Rewriting Systems](https://joerg.endrullis.de/trs/) : general theoretical background
-- [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707) : Chapter 7.4, for the implementation of Huet's completion loop
-- [Twee: An Equational Theorem Prover (System Description) ](https://smallbone.se/papers/twee.pdf)
+- [Term Rewriting Systems](https://joerg.endrullis.de/trs/) : general theoretical background and implementation of: term definition, substitution, unification, rewrite
+- [Term Rewriting and All That](https://www.cambridge.org/core/books/term-rewriting-and-all-that/71768055278D0DEF4FFC74722DE0D707) : Chapter 7.4: the implementation of Huet's completion loop
 - [THINGS TO KNOW WHEN IMPLEMENTING LPO](https://www.worldscientific.com/doi/abs/10.1142/S0218213006002564) : implementation of naive LPO
+- [Twee: An Equational Theorem Prover (System Description) ](https://smallbone.se/papers/twee.pdf) : an industrial level reference for implementation, not very useful for the current project since the code is very optimized
+- [Completion without Failure](https://www.semanticscholar.org/paper/Completion-without-Failure-1-Bachmair-Plaisted/be28fac7cc04a6affd1b05997bb587600b98faf5): reference for unfailing KBC
 
-- [Completion without Failure](https://www.semanticscholar.org/paper/Completion-without-Failure-1-Bachmair-Plaisted/be28fac7cc04a6affd1b05997bb587600b98faf5): implementation reference for unfailing KBC
+# AI Disclaimer
+This project used AI assistance for tooling and peripheral engineering tasks, but not for the core algorithmic implementation.
 
+AI assistance was used for:
+- Haskell/Cabal project setup,
+- `.cabal` configuration,
+- project-structure organization,
+- QuickCheck/property-test scaffolding,
+- result-table formatting in the executable under `app/`,
+- translation of selected TPTP examples into Haskell syntax.
+
+The core implementation was written *without* AI-generated algorithmic code. The modules implementing the actual completion procedure and its theoretical infrastructure were derived directly from the referenced definitions and papers:
+
+- `Term.hs`
+- `Substitution.hs`
+- `Matching.hs`
+- `Unification.hs`
+- `LPO.hs`
+- `Rewrite.hs`
+- `CriticalPair.hs`
+- `Huet.hs`
+
+Please see the `References` section for the sources used.
