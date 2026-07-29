@@ -3,8 +3,35 @@
 teLe is a Haskell implementation of [Knuth–Bendix completion](https://en.wikipedia.org/wiki/Knuth–Bendix_completion_algorithm) (KBC) with the
 [lexicographic path ordering](https://en.wikipedia.org/wiki/Path_ordering_(term_rewriting)) (LPO). Given a set of equational axioms, it attempts to derive a canonical rewrite system; when completion succeeds, equational reasoning becomes a decision procedure by normalization.
 
-## Run
-### Under the root folder:
+# Goal : core deliverable for praktika
+
+1. Implementation
+  - Huet/KB completion implementation 
+  - LPO 
+  - selection strategies(smallest rule first)
+
+2. Evaluation and analysis
+  - Hand-written algebraic examples: nat, monoid, zero monoid, group, wiki monoid.
+  - 18 examples from riginal KB paper.
+  - 6 TPTP equational examples.
+
+# Project Structure
+
+
+| Layer | Module            | Depends on        |  TODO        |
+|-------|-------------------|-------------------|--------------|
+|7| `Huet.hs`(classical completion) | 0 - 6| 
+| 6| `CriticalPair.hs` | 0 - 5       | unfailing version(future work) |
+| 5    | `Rewrite.hs`          | 0 - 4              | 
+| 4     | `Unification.hs`  | Matching          | possible optimization: Martelli-Montanari|
+| 3     | `Matching.hs`     | Substitution      |
+| 2     | `Substitution.hs` | Term              |
+| 1     | `LPO.hs`          | Term              | possible optimization
+| 0     | `Term.hs`         | — (foundation)    |
+
+
+# Run
+## Under the root folder:
 1. build the project
 ```shell
 cabal build
@@ -13,7 +40,7 @@ cabal build
 ```shell
 cabal run -v0 kbc-haskell 2>/dev/null 
 ```
-### TPTP
+## TPTP
 The TPTP examples are translated into Haskell because there're very few pure equational examples.
 
 Analysis are written as comment in each example
@@ -31,7 +58,6 @@ cabal repl
 ```shell
 result0831
 ```
----
 
 # Overview of result
 
@@ -68,20 +94,7 @@ result0831
 
 ```
 
-# Goal : core deliverable for praktika
-
-1. Implementation
-  - Huet/KB completion implementation 
-  - LPO 
-  - selection strategies(smallest rule first)
-
-2. Evaluation and analysis
-  - Hand-written algebraic examples: nat, monoid, zero monoid, group, wiki monoid.
-  - 18 examples from riginal KB paper.
-  - 6 TPTP equational examples.
----
-
-## Example : Uniqueness of Inverses
+# Example : Uniqueness of Inverses
 
 Given the group axioms and an additional assumption that `a2` is a left inverse of `a`,
 
@@ -109,23 +122,7 @@ decideEq rs $
 
 ---
 
-## Project Structure
-
-
-| Layer | Module            | Depends on        |  TODO        |
-|-------|-------------------|-------------------|--------------|
-|7| `Huet.hs`(classical completion) | 0 - 6| 
-| 6| `CriticalPair.hs` | 0 - 5       | unfailing version(future work) |
-| 5    | `Rewrite.hs`          | 0 - 4              | 
-| 4     | `Unification.hs`  | Matching          | possible optimization: Martelli-Montanari|
-| 3     | `Matching.hs`     | Substitution      |
-| 2     | `Substitution.hs` | Term              |
-| 1     | `LPO.hs`          | Term              | possible optimization
-| 0     | `Term.hs`         | — (foundation)    |
-
----
-
-## References :
+# References :
 
 - [Simple Word Problems in Universal Algebra](https://www.cs.tufts.edu/~nr/cs257/archive/don-knuth/knuth-bendix.pdf): the original paper from Knuth&Bendix
 
