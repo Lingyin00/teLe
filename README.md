@@ -91,9 +91,7 @@ result0831
 1    identity is unique           yes        yes           0.00s
 2    inverse is unique            yes        yes           0.00s
 ----------------------------------------------------------------
-
 ```
-
 # Example : Uniqueness of Inverses
 
 Given the group axioms and an additional assumption that `a2` is a left inverse of `a`,
@@ -113,7 +111,8 @@ decideEq rs $
   Equation (app "a2" []) (app "i" [app "a" []])
 -- True
 ```
----
+# Analysis:
+Please see: ```ExamplesFromKnuth.hs```, ```Decide.hs```, and each haskell file under ```TPTP``` folder.
 
 # Future work
 1. Reimplementation in Lean's metaprogramming framework, possibly the unfailing KBC
