@@ -18,15 +18,15 @@ teLe is a Haskell implementation of [Knuth–Bendix completion](https://en.wikip
 # Project Structure
 
 
-| Layer | Module            | Depends on        |  TODO        |
-|-------|-------------------|-------------------|--------------|
+| Layer | Module            | Depends on        |
+|-------|-------------------|-------------------|
 |7| `Huet.hs`(classical completion) | 0 - 6| 
-| 6| `CriticalPair.hs` | 0 - 5       | unfailing version(future work) |
+| 6| `CriticalPair.hs` | 0 - 5       |
 | 5    | `Rewrite.hs`          | 0 - 4              | 
-| 4     | `Unification.hs`  | Matching          | possible optimization: Martelli-Montanari|
+| 4     | `Unification.hs`  | Matching          |
 | 3     | `Matching.hs`     | Substitution      |
 | 2     | `Substitution.hs` | Term              |
-| 1     | `LPO.hs`          | Term              | possible optimization
+| 1     | `LPO.hs`          | Term              | 
 | 0     | `Term.hs`         | — (foundation)    |
 
 
