@@ -1,8 +1,11 @@
-module Huet where
-
+-- | 
 -- Implementation of the `Huet´s completion procedure` according to `TRaAT` written by Nipkow & Baader
 -- Input: Set E of identities, Terminating set R of rewrite rules
 -- rules may be marked or not(for computing critical pairs)
+-- The analysis why I have chosen rule selection strategy is shortly summarized since line 179.
+
+module Huet where
+
 import Term
 import Rewrite
 import LPO
@@ -111,7 +114,7 @@ reduceByRule newRule rule =
         [] -> Nothing
         (g' : _) -> Just g'
 
--- TODO helper: divide the rls into rules which can be reduced by newRule and which can not
+-- helper: divide the rls into rules which can be reduced by newRule and which can not
 composeCollapse :: [Rule] -> Rule -> [MRule] -> ([MRule], [Equation])
 composeCollapse allRules newRule = foldr classify ([], [])
   where
@@ -126,10 +129,10 @@ composeCollapse allRules newRule = foldr classify ([], [])
              let d' = normalize allRules d
              in (mr { mrule = Rule g d' } : keptAcc, eqAcc)
 
+-- the main completion loop
 huet :: Prec -> [Equation] -> Maybe [MRule]
 huet p es = runFresh(outer 0 (sortEqs es) [])
   where -- es = E_0, [] = R_0
-    -- TODO: Is preprocessing needed here??
     outer :: Int -> [Equation] -> [MRule] -> Fresh(Maybe [MRule])
     outer n eqs rls 
       | n > 500    = trace ("STOP at " ++ show n) $ pure (Just rls)
@@ -173,8 +176,18 @@ huet p es = runFresh(outer 0 (sortEqs es) [])
                     -- remove eq from the original equation set
                     -- add new equations to the equation set: new equations are from those reduced rules(keep the reduced lhs and keep rhs unchanged)
 
-
+-- =========================================================================================
+-- following tests documents the results and debugging exploration, with an older implementation of Huet completion loop,
+-- *without* the smallest rule first selection strategy
+-- the standard group axiom example diverged, because:
+-- the procedure starts generating large specialized cancellation rules such as
+-- i(P * i(Q)) * (P * r) -> Q * r, 
+-- instead of discovering the compact lemmas like 
+-- i(x*y) -> i(y)*i(x), i(i(x))->x, and i(x)*(x*y)->y.
+-- The rules then becoming longer and more deeply nested
+-- ==========================================================================================
 -- test with group axioms
+
 groupPrec :: Prec
 groupPrec = precFromList ["i", "f", "e"]
 

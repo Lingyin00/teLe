@@ -5,9 +5,6 @@ import Rewrite
 import Term 
 import Substitution
 
--- documents where and how the critical pair comes from
--- TODO: extension for later use (Proof reconstruction)
--- Or it need a better data structure(decision for later)
 data Source = FromOverlap Rule Rule Pos Subst 
     deriving (Show) -- FromOverlap :: Rule -> Rule -> Subst -> Source
 
@@ -20,12 +17,13 @@ data CriticalPair = CriticalPair{
 -- given two rules, compute its critical pair 
 criticalPairs :: Rule -> Rule -> Fresh [CriticalPair]
 criticalPairs r1 r2 = do
-    r1' <- renameRule r1 
-    r2' <- renameRule r2 
+    r1' <- renameRule r1 -- fresh the name of variables in r1
+    r2' <- renameRule r2 -- fresh r2
     let s = lhs r1'
         t = rhs r1'
         u = lhs r2'
         v = rhs r2'
+        -- find overlap in the refreshed rules
         cps = [CriticalPair left right (FromOverlap r2' r1' pos sub) |
                pos <- nonVarPos s,
                Just subterm <- [subtermAt s pos],

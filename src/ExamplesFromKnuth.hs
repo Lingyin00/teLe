@@ -36,7 +36,7 @@ import Text.Printf (printf)
 -- 12   (l,r) systems I          9 rules      9 rules      10 rules, 110s          0.00s
 -- 13   (r,l) systems            12 rules     12 rules     HALTED                  0.02s
 -- 14   (l,r) systems II         12 rules     12 rules     21 rules, restart,2.5 min    0.00s
--- 15   (l,r) systems III        15 rules     15 rules     FAIL(degenerate)        0.04s
+-- 15   (l,r) systems III        15 rules     15 rules     FAIL(DIVERGED)          0.04s
 -- 16   Central groupoids II     FAIL         FAIL         13 rules, 9 min         0.00s
 -- 17   Central groupoids III    5 rules      5 rules      25 rules, 2 min         0.00s
 -- 18   Burnside groups          FAIL         FAIL         FAIL                    0.00s
@@ -209,7 +209,7 @@ groupAxiom4 = [associ, leftid, leftid2, leftinv, leftinv2]
 testGroup4 :: Maybe [MRule]
 testGroup4 = huet groupP4 groupAxiom4
 result5 :: IO ()
-result5 = putStrLn (pretty testInvProp)
+result5 = putStrLn (pretty testGroup4)
 
 -- ===================================================================
 -- Example 6: central groupoids I.
@@ -574,7 +574,7 @@ result15 = putStrLn (pretty testClifford)
 -- the distinct variables x and y, and distinct variables are incomparable
 -- under any precedence. Both s1 > s2 and s2 > s1 were tried.
 
--- | Precedence s1 > s2 > f.
+-- | Precedence s2 > s1 > f with success, while s1 > s2 > f with faied orientation.
 cg2P :: Prec
 cg2P = precFromList ["s2", "s1", "f"]
 
@@ -659,7 +659,7 @@ data Example = Example
 examples :: [Example]
 examples =
   [ Example "1"   "Group theory"          groupP     groupAxiom       (Rules 10) "10 rules, 30 s"
-  , Example "2"   "Group theory II"       groupP2    groupAxiom       Fails  "FAIL"
+  , Example "2"   "Group theory II"       groupP2    groupAxiom       Fails  "FAIL(never terminate)"
   , Example "3"   "Group theory III"      groupP     groupAxiomR      (Rules 10) "24 rules(8 redundant), 40 s"
   , Example "4"   "Inverse property"      invP       [invProp]        (Rules 3)  "3 rules(per hand)"
   , Example "5"   "Group theory IV"       groupP4    groupAxiom4      (Rules 12) "12 rules, 50 s"
@@ -673,7 +673,7 @@ examples =
   , Example "12"  "(l,r) systems I"       groupP     lrAxioms         (Rules 9)  "10 rules, 110s"
   , Example "13"  "(r,l) systems"         groupP     rlAxioms         (Rules 12) "HALTED"
   , Example "14"  "(l,r) systems II"      lr2P       lr2Axioms        (Rules 12) "21 rules, restart,2.5 min"
-  , Example "15"  "(l,r) systems III"     cliffordP  cliffordAxioms   (Rules 15) "FAIL(degenerate)"
+  , Example "15"  "(l,r) systems III"     cliffordP  cliffordAxioms   (Rules 15) "FAIL(DIVERGED)"
   , Example "16"  "Central groupoids II"  cg2P       cg2Axioms        Fails      "13 rules, 9 min"
   , Example "17"  "Central groupoids III" cg2P       cg3Axioms        (Rules 5) "25 rules, 2 min"
   , Example "18"  "Burnside groups"       groupP     burnsideAxioms   Fails      "FAIL"
@@ -691,7 +691,7 @@ runExample ex = do
 
 runAll :: IO Bool
 runAll = do
-  printf "%-4s %-24s %-12s %-12s %-20s %8s\n"
+  printf "%-4s %-24s %-12s %-12s %-28s %8s\n"
          "#" "Example" "Result" "Expected" "Knuth" "time"
   putStrLn (replicate 86 '-')
   oks <- mapM row examples
@@ -703,7 +703,7 @@ runAll = do
     row ex = do
       (got, secs) <- runExample ex
       let ok = got == exExpected ex
-      printf "%-4s %-24s %-12s %-12s %-20s %7.2fs%s\n"
+      printf "%-4s %-24s %-12s %-12s %-28s %7.2fs%s\n"
              (exNo ex) (exName ex) (show got) (show (exExpected ex))
              (exKnuth ex) secs (if ok then "" else "   <-- MISMATCH")
       pure ok

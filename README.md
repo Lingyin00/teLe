@@ -12,7 +12,7 @@ teLe is a Haskell implementation of [Knuth–Bendix completion](https://en.wikip
 
 2. Evaluation and analysis
   - Hand-written algebraic examples: nat, monoid, zero monoid, group, wiki monoid.
-  - 18 examples from riginal KB paper.
+  - 18 examples from original KB paper.
   - 6 TPTP equational examples.
 
 # Project Structure
@@ -20,7 +20,7 @@ teLe is a Haskell implementation of [Knuth–Bendix completion](https://en.wikip
 
 | Layer | Module            | Depends on        |
 |-------|-------------------|-------------------|
-|7| `Huet.hs`(classical completion) | 0 - 6| 
+|7| `Huet.hs`(the main completion loop) | 0 - 6| 
 | 6| `CriticalPair.hs` | 0 - 5       |
 | 5    | `Rewrite.hs`          | 0 - 4              | 
 | 4     | `Unification.hs`  | Matching          |
